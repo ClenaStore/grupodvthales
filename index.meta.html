@@ -433,7 +433,14 @@ metas = metas.filter(r => r.Empresa === 'VILLA GOURMET');
       painel.appendChild(div);
     });
 
-    if(empresaSel) mostrarGrafico(metas); else hideGrafico();
+ if(empresaSel) {
+  // 🔒 gráfico só da Villa Gourmet
+  const dadosVilla = metas.filter(r => r.Empresa === 'VILLA GOURMET');
+  mostrarGrafico(dadosVilla);
+} else {
+  hideGrafico();
+}
+
   }catch(e){
     console.error(e);
     painel.innerHTML = `<p style="text-align:center; color:var(--muted)">Erro ao carregar dados.</p>`;
