@@ -1,97 +1,62 @@
 <!DOCTYPE html>
-<html lang="pt-BR" data-theme="light">
+<html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <title>Cancelamentos - Grupo DV</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
   <style>
     :root{
-      --bg:#0b1020; --surface:#10172a; --card:#0f172a; --text:#e5e7eb; --muted:#94a3b8;
-      --line:rgba(148,163,184,.25); --icon-bg:rgba(255,255,255,.06);
-      --shadow:0 20px 60px rgba(2,6,23,.35); --brand:#60a5fa; --brand2:#22d3ee;
-      --ok:#16a34a; --bad:#dc2626;
-    }
-    [data-theme="light"]{
       --bg:#f6f7fb; --surface:#fff; --card:#fff; --text:#0f172a; --muted:#475569;
       --line:#e5e7eb; --icon-bg:rgba(2,6,23,.06); --shadow:0 16px 36px rgba(15,23,42,.08);
+      --ok:#16a34a; --bad:#dc2626; --brand:#0ea5e9;
     }
     *{box-sizing:border-box}
-    html,body{height:100%}
-    body{margin:0; font-family:ui-sans-serif,-apple-system,Segoe UI,Roboto,Arial,sans-serif; background:var(--bg); color:var(--text)}
+    body{margin:0; font-family:ui-sans-serif,Segoe UI,Roboto,Arial,sans-serif; background:var(--bg); color:var(--text)}
 
-    header{position:sticky; top:0; z-index:40; backdrop-filter:saturate(160%) blur(8px);
-      background:color-mix(in srgb, var(--surface) 80%, transparent); border-bottom:1px solid var(--line);}
+    header{position:sticky; top:0; z-index:40; background:#fff; border-bottom:1px solid var(--line);}
     .head{max-width:1200px; margin:0 auto; padding:14px 18px; display:flex; align-items:center; gap:12px}
     .brand{display:flex; align-items:center; gap:10px; text-decoration:none; color:inherit}
-    .brand img{height:42px}
-    .title{font-weight:800; letter-spacing:.2px; font-size:clamp(18px,1.6vw,22px)}
+    .brand img{height:38px}
+    .title{font-weight:800; font-size:18px}
     .grow{flex:1}
     .btn{border:1px solid var(--line); background:var(--surface); color:var(--text);
-      padding:10px 12px; border-radius:12px; font-weight:800; cursor:pointer; display:inline-flex; gap:8px; align-items:center}
-    .btn:hover{box-shadow:var(--shadow); transform:translateY(-1px)}
-    .only-desktop{display:inline-flex}
-    @media (max-width:900px){.only-desktop{display:none!important}}
-
-    .user{position:relative}
-    .user-btn{display:flex; align-items:center; gap:10px; border:1px solid var(--line);
-      background:var(--surface); padding:6px 8px; border-radius:999px; cursor:pointer}
-    .user-btn img{width:34px; height:34px; border-radius:50%; object-fit:cover; background:var(--icon-bg)}
-    .user-menu{position:absolute; right:0; top:110%; background:var(--surface); border:1px solid var(--line);
-      border-radius:12px; min-width:200px; padding:6px; box-shadow:var(--shadow); display:none}
-    .user.open .user-menu{display:block}
-    .user-menu a,.user-menu button{display:flex; width:100%; padding:10px 12px; border-radius:10px;
-      border:none; background:transparent; color:var(--text); text-align:left; cursor:pointer; font-weight:600}
-    .user-menu a:hover,.user-menu button:hover{background:var(--icon-bg)}
+      padding:8px 14px; border-radius:10px; font-weight:700; cursor:pointer}
+    .btn-whats{ background:#25d366; color:#fff; border:none }
+    .btn:hover{box-shadow:var(--shadow)}
 
     .container{max-width:1200px; margin:0 auto; padding:20px 18px}
-    .filters{display:grid; grid-template-columns: 220px 220px 220px 1fr 200px; gap:12px; align-items:end}
-    @media (max-width:1100px){ .filters{grid-template-columns: 1fr 1fr} }
-    @media (max-width:600px){ .filters{grid-template-columns: 1fr} }
-    .field label{display:block; margin:0 0 6px; color:var(--muted); font-weight:800; font-size:.95rem}
-    .picker-btn, select, input[type="date"], input[type="text"]{
+    .filters{display:grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap:12px; align-items:end}
+    .field label{display:block; margin:0 0 6px; color:var(--muted); font-weight:700; font-size:.9rem}
+    select, input[type="date"], input[type="text"]{
       width:100%; border:1px solid var(--line); background:var(--surface); color:var(--text);
-      border-radius:12px; padding:12px 14px; font-weight:700;
+      border-radius:10px; padding:10px 12px; font-weight:600;
     }
-    .action{width:100%}
 
-    .grupo-empresa{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px; box-shadow:var(--shadow); margin-bottom:16px;}
-    .grupo-empresa h2{margin:0 0 10px; font-size:1.02rem; color:var(--text)}
+    .total-cancelado{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px; box-shadow:var(--shadow); font-weight:800; margin-top:16px}
+    .dados-analisados{ text-align:center; color:var(--muted); font-size:.95em; margin-top:10px }
+
+    .chart-box{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; margin:18px 0; box-shadow:var(--shadow)}
+    #graficoCancelamentos{width:100%!important; height:320px!important}
+
+    .grupo-empresa{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px; box-shadow:var(--shadow); margin-bottom:14px;}
     .item-cancelamento{border-top:1px dashed var(--line); padding:10px 0}
     .item-cancelamento:first-child{border-top:none}
     .item-cancelamento p{margin:4px 0; color:var(--muted)}
 
-    .total-cancelado{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px; box-shadow:var(--shadow); font-weight:800; margin-top:8px; margin-bottom:16px;}
-    .dados-analisados{ text-align:center; color:var(--muted); font-size:.95em; margin-top:12px }
-
-    .chart-box{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; margin:16px 0}
-    #graficoCancelamentos{width:100%!important; height:320px!important}
-
     .loading{position:fixed; inset:0; background:rgba(0,0,0,.55); display:none; align-items:center; justify-content:center; z-index:60}
     .loading.show{display:flex}
-    .spinner{width:74px; height:74px; border-radius:50%; border:6px solid rgba(255,255,255,.25); border-top-color:#fff; animation:spin 1s linear infinite}
-    .loading p{color:#fff; font-weight:800; margin-top:12px; text-shadow:0 2px 6px rgba(0,0,0,.3)}
+    .spinner{width:64px; height:64px; border-radius:50%; border:6px solid rgba(255,255,255,.25); border-top-color:#fff; animation:spin 1s linear infinite}
+    .loading p{color:#fff; font-weight:700; margin-top:12px}
     @keyframes spin{to{transform:rotate(360deg)}}
-
-    .btn-whats{ background:#25d366; color:#fff; border-color:#21b75a }
-    #botaoChatFlutuante{position:fixed; bottom:20px; right:20px; width:46px; height:46px;
-      background:linear-gradient(140deg,#0B2240, color-mix(in srgb,#0B2240 70%, #22d3ee)); color:#fff; border:none; border-radius:50%; display:flex; align-items:center; justify-content:center;
-      cursor:pointer; z-index:55; box-shadow:0 10px 28px rgba(2,6,23,.35); font-weight:900; letter-spacing:.3px}
-    #botaoChatFlutuante:hover{ transform:translateY(-1px); box-shadow:0 14px 34px rgba(0,0,0,.45) }
   </style>
 </head>
 <body>
   <header>
     <div class="head">
-      <a class="brand" href="index.html"><img src="https://github.com/ClenaStore/painel-principal/blob/main/img/GRUPO%20DV%20(1).png?raw=true" alt="Logo"><span class="title">Cancelamentos</span></a>
+      <a class="brand" href="index.html"><img src="https://github.com/ClenaStore/painel-principal/blob/main/img/GRUPO%20DV%20(1).png?raw=true"><span class="title">Cancelamentos</span></a>
       <div class="grow"></div>
-      <a class="btn only-desktop" href="index.relatorios.html">📄 Relatórios</a>
-      <button id="themeToggle" class="btn">🌓 Tema</button>
-      <div class="user" id="userMenu">
-        <button class="user-btn" type="button"><img src="https://github.com/ClenaStore/grupodvthales/blob/main/paste/Imagem%20do%20WhatsApp%20de%202025-09-19%20%C3%A0(s)%2010.13.35_6590510e.jpg?raw=true" alt=""><strong style="font-size:13px">Thales</strong></button>
-        <div class="user-menu"><a href="perfil.html">👤 Meu Perfil</a><button onclick="handleLogout()">🚪 Sair</button></div>
-      </div>
+      <a class="btn" href="index.relatorios.html">📄 Relatórios</a>
     </div>
   </header>
 
@@ -102,12 +67,10 @@
       <div class="field"><label>Data inicial</label><input type="date" id="dataInicio" /></div>
       <div class="field"><label>Data final</label><input type="date" id="dataFim" /></div>
       <div class="field"><label>Empresa</label>
-        <select id="filtroEmpresa" disabled>
-          <option value="VILLA GOURMET" selected>VILLA GOURMET</option>
-        </select>
+        <input type="text" value="VILLA GOURMET" readonly />
       </div>
       <div class="field"><label>Busca</label><input type="text" id="filtroBusca" placeholder="Buscar item..." /></div>
-      <div class="field"><label>&nbsp;</label><button id="btnFiltrar" class="btn action btn-whats">📤 WhatsApp</button></div>
+      <div class="field"><label>&nbsp;</label><button id="btnFiltrar" class="btn btn-whats">📤 WhatsApp</button></div>
     </div>
 
     <div class="total-cancelado">📊 Total Cancelado: <span id="totalCancelado"><strong>R$ 0,00</strong></span></div>
@@ -123,7 +86,7 @@
   </div>
 
 <script>
-const URL_SCRIPT = '/api/cancelamentos';
+const URL_SCRIPT = '/api/cancelamentos'; // ajuste para sua API
 let cancelamentos = [];
 let chartCancelamentos = null;
 const $$ = sel => document.querySelector(sel);
@@ -132,8 +95,8 @@ const BRL = v => (Number(v)||0).toLocaleString('pt-BR',{style:'currency',currenc
 const fmtDataBR = iso => { if(!iso) return ''; const [y,m,d]=iso.split('-'); return `${d}/${m}/${y}`; };
 
 function preencherDataPadrao(){
-  const hoje = new Date(); const inicio = new Date(hoje); inicio.setDate(1);
-  const iso = d => new Date(d.getFullYear(), d.getMonth(), d.getDate()).toISOString().split('T')[0];
+  const hoje = new Date(); const inicio = new Date(hoje.getFullYear(),hoje.getMonth(),1);
+  const iso = d => d.toISOString().split('T')[0];
   $$('#dataInicio').value = iso(inicio);
   $$('#dataFim').value    = iso(hoje);
 }
@@ -159,11 +122,8 @@ function aplicarFiltros(){
   const grupo = cancelamentos.filter(c=>{
     if(c.empresa !== emp) return false;
     if(busca && !String(c.item).toLowerCase().includes(busca)) return false;
-
-    const dItem = new Date(c.data);
-    if(di && dItem < new Date(di)) return false;
-    if(df && dItem > new Date(df)) return false;
-
+    if(di && c.data < di) return false;
+    if(df && c.data > df) return false;
     return true;
   }).sort((a,b)=> a.data.localeCompare(b.data));
 
@@ -206,7 +166,7 @@ function desenharGrafico(lista){
   $$('#dataFim').addEventListener(evt, aplicarFiltros);
   $$('#filtroBusca').addEventListener(evt, aplicarFiltros);
 });
-$$('#btnFiltrar').addEventListener('click', ()=>alert("Função WhatsApp ainda não configurada."));
+$('#btnFiltrar')?.addEventListener('click', ()=>alert("Função WhatsApp ainda não configurada."));
 
 (function init(){ preencherDataPadrao(); carregarDados(); })();
 </script>
