@@ -518,18 +518,20 @@ function aplicar(){
   const filtroEmp = (empresa)=> allSelected || empresasSelecionadas.has(empresa);
 
   // PAGOS
-  const pagos = pagamentosAll.filter(p=>{
-    const okEmp = filtroEmp(p.empresa);
-    const d = p.data_pagamento ? parseISO(p.data_pagamento) : null;
-    return okEmp && d && inRange(d,pIni,pFim);
-  });
+// PAGOS - força apenas Villa
+const pagos = pagamentosAll.filter(p=>{
+  const d = p.data_pagamento ? parseISO(p.data_pagamento) : null;
+  return p.empresa.toUpperCase().includes("VILLA GOURMET LEM") && d && inRange(d,pIni,pFim);
+});
+
 
   // ABERTOS
-  const abertos = pagamentosAll.filter(p=>{
-    const okEmp = filtroEmp(p.empresa);
-    const d = !p.data_pagamento && p.vencimento ? parseISO(p.vencimento) : null;
-    return okEmp && d && inRange(d,pIni,pFim) && !p.data_pagamento;
-  });
+// ABERTOS - força apenas Villa
+const abertos = pagamentosAll.filter(p=>{
+  const d = !p.data_pagamento && p.vencimento ? parseISO(p.vencimento) : null;
+  return p.empresa.toUpperCase().includes("VILLA GOURMET LEM") && d && inRange(d,pIni,pFim) && !p.data_pagamento;
+});
+
 
   // guarda para o modal
   lastAbertos = abertos.slice().sort((x,y)=> parseISO(x.vencimento) - parseISO(y.vencimento));
