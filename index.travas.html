@@ -127,12 +127,11 @@
 
 <div class="wrap">
   <div class="filters">
-    <label>Empresa
-      <select id="empresa">
-        <option>Empresa</option>
-        <option>VILLA GOURMET</option>
-      </select>
-    </label>
+   <label>Empresa
+  <input type="text" value="VILLA GOURMET" readonly
+         style="width:100%;padding:10px 12px;border:1px solid #e5e7eb;border-radius:10px;font-size:14px;background:#f1f5f9;font-weight:600">
+</label>
+
     <label>Período
       <input id="periodo" type="month" />
     </label>
@@ -181,7 +180,7 @@
 <script>
 /* ======= CONFIG ======= */
 const API_BASE='/api/travas_comparacao';
-const EMPRESAS=['MERCATTO DELICIA','DELICIA GOURMET','VILLA GOURMET','M. KIDS','PADARIA DELICIA'];
+const EMPRESAS=['VILLA GOURMET'];
 
 /* ======= PLANOS VÁLIDOS (para soma "Fornecedores") ======= */
 const PLANOS_VALIDOS = new Set([
@@ -310,7 +309,6 @@ async function getEmpresaPeriodo(emp, periodo){
 }
 
 /* UI */
-const selEmpresa=document.getElementById('empresa');
 const inpPeriodo=document.getElementById('periodo');
 const container=document.getElementById('content');
 let ChartLib=null;
@@ -450,7 +448,6 @@ async function openComparativoPlano(planoNome, periodo){
 }
 
 /* Eventos filtros */
-selEmpresa.addEventListener('change', run);
 inpPeriodo.addEventListener('change', run);
 
 window.addEventListener('DOMContentLoaded', ()=>{
@@ -480,8 +477,9 @@ function companySkeleton(nome){
 /* Render principal */
 async function run(){
   const runId = ++currentRun;
-  const empSel=selEmpresa.value, periodo=inpPeriodo.value;
-  const empresas = empSel==='TODAS AS EMPRESAS' ? EMPRESAS : [empSel];
+const periodo=inpPeriodo.value;
+const empresas = EMPRESAS;  // sempre só VILLA GOURMET
+
 
   container.innerHTML = empresas.map(e => companySkeleton(e)).join('');
 
