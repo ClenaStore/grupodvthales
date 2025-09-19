@@ -112,7 +112,10 @@
       </div>
       <div class="field">
         <label>Empresa</label>
-        <select id="empresaFiltro"><option value="">Todas</option></select>
+        <!-- Travado no VILLA GOURMET -->
+        <select id="empresaFiltro" disabled>
+          <option value="VILLA GOURMET" selected>VILLA GOURMET</option>
+        </select>
       </div>
       <div class="field">
         <label>&nbsp;</label>
@@ -163,16 +166,14 @@ async function carregarAgenda(){
   showLoading(true);
   try{
     const rsp=await fetch(API_URL); eventos=await rsp.json();
-    const empresas=[...new Set(eventos.map(e=>e.empresa))].sort(); const sel=$$('#empresaFiltro'); if(sel.options.length==1)empresas.forEach(e=>{const o=document.createElement('option');o.value=e;o.textContent=e;sel.appendChild(o);});
     render();
   }catch(e){console.error(e);}finally{showLoading(false);}
 }
 
 function render(){
   const box=$$('#painelAgenda'); box.innerHTML="";
-  const empSel=$$('#empresaFiltro').value;
-  let filtrados=eventos;
-  if(empSel) filtrados=filtrados.filter(e=>e.empresa===empSel);
+  // 🔒 Apenas VILLA GOURMET
+  let filtrados=eventos.filter(e=>e.empresa==="VILLA GOURMET");
   if(range.start) filtrados=filtrados.filter(e=>e.data>=ISO(range.start));
   if(range.end) filtrados=filtrados.filter(e=>e.data<=ISO(range.end));
   if(!filtrados.length){box.innerHTML="<p style='text-align:center;color:var(--muted)'>Nenhum evento encontrado.</p>";return;}
