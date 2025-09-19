@@ -419,7 +419,8 @@ function atualizarRankingEmpresas() {
 
   const nomesMes = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
   const meses = Object.keys(dadosMesEmpresa).sort().reverse();
-  const empresas = [...new Set(filtrados.map(d=>d.empresa))].sort();
+const empresas = ["VILLA GOURMET LEM"];
+
 
   const tbody = $('#tabela-ranking');
   const thead = tbody.parentElement.parentElement.querySelector('thead');
