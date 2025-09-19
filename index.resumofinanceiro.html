@@ -444,14 +444,6 @@
           <canvas id="graficoAnual"></canvas>
         </div>
 
-        <aside class="compare-panel">
-          <h4>Comparar empresas</h4>
-          <div class="compare-actions">
-            <button class="mini-btn" id="btnCompareAll">Marcar todas</button>
-            <button class="mini-btn" id="btnCompareNone">Limpar</button>
-          </div>
-          <div id="compareList" class="checklist"></div>
-        </aside>
       </div>
     </div>
   </div>
@@ -881,8 +873,8 @@ const empresaSelecionada = "VILLA GOURMET";
     document.getElementById('kpiErroAno').textContent  = `R$ ${BRL(erroAno)}`;
     document.getElementById('kpiErroMes').textContent  = `R$ ${BRL(erroMes)}`;
 
-    montarChecklistComparacao(empresa);
-    renderGraficoComparacao(ano);
+renderGraficoUnico(empresa, ano);
+
 
     document.getElementById('modalAnual').classList.add('open');
 
