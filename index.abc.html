@@ -101,11 +101,12 @@
   <div class="container">
     <!-- Filtros -->
     <div class="grid filters">
-      <div class="card pad">
-        <label>🏢 Empresa</label>
-        <select id="filtroEmpresa">
-          <option value="VILLA GOURMET">VILLA GOURMET (carregando…)</option>
-        </select>
+ <div class="card pad">
+  <label>🏢 Empresa</label>
+  <select id="filtroEmpresa" disabled>
+    <option value="VILLA GOURMET" selected>VILLA GOURMET</option>
+  </select>
+</div>
       </div>
       <div class="card pad"><label>🔍 Busca</label><input id="filtroBusca" type="text" placeholder="Produto..." /></div>
       <div class="card pad"><label>📅 Início</label><input id="dataInicio" type="date" /></div>
@@ -130,6 +131,14 @@
       <div class="card pad"><h3 class="muted">💰 Mais Lucrativos</h3><div id="maisLucro"></div></div>
       <div class="card pad"><h3 class="muted">📉 Menos Lucrativos</h3><div id="menosLucro"></div></div>
     </div>
+
+    <div class="section-title">Registros</div>
+    <div class="card pad">
+      <div id="statusBox" class="loader"><div class="spinner"></div> Carregando VILLA GOURMET…</div>
+      <div id="listaVendas" style="display:none"></div>
+    </div>
+  </div>
+</div>
 
 <script>
 const URL_SCRIPT='/api/abc_vendas';
@@ -193,6 +202,31 @@ function desenharGrafico(F){const canvas=$$('#graficoVendas'); const porDia={}; 
   const labels=Object.keys(porDia).sort(), vals=labels.map(d=>porDia[d]); if(chartVendas)chartVendas.destroy();
   chartVendas=new Chart(canvas.getContext('2d'),{type:'line',data:{labels:labels.map(dBR),datasets:[{label:'Faturamento por dia',data:vals,fill:true,borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,.15)',pointRadius:4,pointHoverRadius:6}]},options:{responsive:true,maintainAspectRatio:false,scales:{y:{beginAtZero:true}},plugins:{legend:{display:false},title:{display:true,text:'Evolução de Vendas'}}}});
   canvas.style.display='block';}
+
+/* BOOTSTRAP com cache */
+async function boot(){
+  const box=$$('#statusBox'), LS_KEY='dv_cache', EXPIRA_MS=20*60*60*1000; let cache=null;
+  try{const raw=localStorage.getItem(LS_KEY); if(raw){const parsed=JSON.parse(raw); if(Date.now()-parsed.ts<EXPIRA_MS)cache=parsed.data;}}catch(e){}
+  if(cache){CACHE=cache; RAW=Object.values(CACHE).flat(); marcarEmpresaPronta('VILLA GOURMET'); setDatasPorFaixa(RAW); aplicar(); box.style.display='none'; return;}
+  try{
+  box.innerHTML='<div class="spinner"></div> Carregando VILLA GOURMET…';
+  const villa = await fetchEmpresa('VILLA GOURMET');
+  CACHE['VILLA GOURMET']=villa;
+  RAW=villa.slice();
+  setDatasPorFaixa(villa);
+  marcarEmpresaPronta('VILLA GOURMET');
+  $$('#filtroEmpresa').value='VILLA GOURMET';
+  aplicar();
+}catch(e){
+  box.className='error';
+  box.textContent='Erro ao carregar VILLA GOURMET: '+(e.message||e);
+  return;
+}
+
+  try{localStorage.setItem(LS_KEY,JSON.stringify({data:CACHE,ts:Date.now()}));}catch(e){}
+  if(Object.keys(CACHE).length>=2){const optTodas=[...$$('#filtroEmpresa').options].find(o=>o.value==='');if(optTodas)optTodas.textContent='Todas';}
+  box.style.display='none';
+}
 
 window.addEventListener('load',()=>{
   boot();
