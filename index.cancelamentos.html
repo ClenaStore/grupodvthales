@@ -78,7 +78,7 @@
     #botaoChatFlutuante{position:fixed; bottom:20px; right:20px; width:46px; height:46px;
       background:linear-gradient(140deg,#0B2240, color-mix(in srgb,#0B2240 70%, #22d3ee)); color:#fff; border:none; border-radius:50%; display:flex; align-items:center; justify-content:center;
       cursor:pointer; z-index:55; box-shadow:0 10px 28px rgba(2,6,23,.35); font-weight:900; letter-spacing:.3px}
-    #botaoChatFlutuante:hover{ transform:translateY(-1px); box-shadow:0 14px 34px rgba(2,6,23,.45) }
+    #botaoChatFlutuante:hover{ transform:translateY(-1px); box-shadow:0 14px 34px rgba(0,0,0,.45) }
   </style>
 </head>
 <body>
@@ -159,8 +159,11 @@ function aplicarFiltros(){
   const grupo = cancelamentos.filter(c=>{
     if(c.empresa !== emp) return false;
     if(busca && !String(c.item).toLowerCase().includes(busca)) return false;
-    if(di && c.data < di) return false;
-    if(df && c.data > df) return false;
+
+    const dItem = new Date(c.data);
+    if(di && dItem < new Date(di)) return false;
+    if(df && dItem > new Date(df)) return false;
+
     return true;
   }).sort((a,b)=> a.data.localeCompare(b.data));
 
@@ -203,7 +206,7 @@ function desenharGrafico(lista){
   $$('#dataFim').addEventListener(evt, aplicarFiltros);
   $$('#filtroBusca').addEventListener(evt, aplicarFiltros);
 });
-$('#btnFiltrar').addEventListener('click', ()=>alert("Função WhatsApp ainda não configurada."));
+$$('#btnFiltrar').addEventListener('click', ()=>alert("Função WhatsApp ainda não configurada."));
 
 (function init(){ preencherDataPadrao(); carregarDados(); })();
 </script>
