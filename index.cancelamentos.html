@@ -195,7 +195,9 @@
       </div>
       <div class="field">
         <label>Empresa</label>
-        <select id="filtroEmpresa"></select>
+<select id="filtroEmpresa" disabled>
+  <option value="VILLA GOURMET" selected>VILLA GOURMET</option>
+</select>
       </div>
       <div class="field">
         <label>Busca</label>
@@ -281,14 +283,14 @@ async function carregarDados(){
 }
 
 function preencherFiltros(){
-  const empresas = [...new Set(cancelamentos.map(c => c.empresa))].sort();
   const sel = $$('#filtroEmpresa');
-  sel.innerHTML = `<option value="">Todas as Empresas</option>` + empresas.map(e=>`<option value="${e}">${e}</option>`).join('');
+  sel.innerHTML = `<option value="VILLA GOURMET" selected>VILLA GOURMET</option>`;
 }
+
 
 /* ---------- Filtros & Render ---------- */
 function aplicarFiltros(){
-  const emp = $$('#filtroEmpresa').value;
+  const emp = "VILLA GOURMET"; // 🔒 Travado
   const busca = ($$('#filtroBusca').value||'').toLowerCase();
   const di = $$('#dataInicio').value;
   const df = $$('#dataFim').value;
@@ -297,12 +299,13 @@ function aplicarFiltros(){
   let totalGeral = 0;
 
   cancelamentos.forEach(c=>{
-    if(emp && c.empresa!==emp) return;
+    if(c.empresa !== emp) return;   // ignora outras empresas
     if(busca && !String(c.item).toLowerCase().includes(busca)) return;
     if(di && c.data < di) return;
     if(df && c.data > df) return;
     (grupos[c.empresa]||(grupos[c.empresa]=[])).push(c);
   });
+
 
   const lista = $$('#listaCancelamentos'); lista.innerHTML = '';
   Object.keys(grupos).sort().forEach(empresa=>{
