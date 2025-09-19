@@ -19,65 +19,100 @@
     }
     *{box-sizing:border-box}
     html,body{height:100%}
-    body{margin:0; font-family:ui-sans-serif,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-      background:var(--bg); color:var(--text);}
+    body{margin:0; font-family:ui-sans-serif,-apple-system,Segoe UI,Roboto,Arial,sans-serif; background:var(--bg); color:var(--text)}
+
     header{position:sticky; top:0; z-index:40; backdrop-filter:saturate(160%) blur(8px);
       background:color-mix(in srgb, var(--surface) 80%, transparent); border-bottom:1px solid var(--line);}
     .head{max-width:1200px; margin:0 auto; padding:14px 18px; display:flex; align-items:center; gap:12px}
     .brand{display:flex; align-items:center; gap:10px; text-decoration:none; color:inherit}
     .brand img{height:42px}
-    .title{font-weight:800; font-size:clamp(18px,1.6vw,22px)}
+    .title{font-weight:800; letter-spacing:.2px; font-size:clamp(18px,1.6vw,22px)}
     .grow{flex:1}
     .btn{border:1px solid var(--line); background:var(--surface); color:var(--text);
       padding:10px 12px; border-radius:12px; font-weight:800; cursor:pointer; display:inline-flex; gap:8px; align-items:center}
     .btn:hover{box-shadow:var(--shadow); transform:translateY(-1px)}
     .only-desktop{display:inline-flex}
     @media (max-width:900px){.only-desktop{display:none!important}}
+
+    .user{position:relative}
+    .user-btn{display:flex; align-items:center; gap:10px; border:1px solid var(--line);
+      background:var(--surface); padding:6px 8px; border-radius:999px; cursor:pointer}
+    .user-btn img{width:34px; height:34px; border-radius:50%; object-fit:cover; background:var(--icon-bg)}
+    .user-menu{position:absolute; right:0; top:110%; background:var(--surface); border:1px solid var(--line);
+      border-radius:12px; min-width:200px; padding:6px; box-shadow:var(--shadow); display:none}
+    .user.open .user-menu{display:block}
+    .user-menu a,.user-menu button{display:flex; width:100%; padding:10px 12px; border-radius:10px;
+      border:none; background:transparent; color:var(--text); text-align:left; cursor:pointer; font-weight:600}
+    .user-menu a:hover,.user-menu button:hover{background:var(--icon-bg)}
+
     .container{max-width:1200px; margin:0 auto; padding:20px 18px}
-    .filters{display:grid; grid-template-columns:220px 220px 220px 1fr 200px; gap:12px; align-items:end}
-    @media (max-width:1100px){.filters{grid-template-columns:1fr 1fr}}
-    @media (max-width:600px){.filters{grid-template-columns:1fr}}
+    .filters{display:grid; grid-template-columns: 220px 220px 220px 1fr 200px; gap:12px; align-items:end}
+    @media (max-width:1100px){ .filters{grid-template-columns: 1fr 1fr} }
+    @media (max-width:600px){ .filters{grid-template-columns: 1fr} }
     .field label{display:block; margin:0 0 6px; color:var(--muted); font-weight:800; font-size:.95rem}
-    select,input[type="date"],input[type="text"]{width:100%; border:1px solid var(--line); background:var(--surface);
-      color:var(--text); border-radius:12px; padding:12px 14px; font-weight:700;}
+    .picker-btn, select, input[type="date"], input[type="text"]{
+      width:100%; border:1px solid var(--line); background:var(--surface); color:var(--text);
+      border-radius:12px; padding:12px 14px; font-weight:700;
+    }
     .action{width:100%}
+
     .grupo-empresa{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px; box-shadow:var(--shadow); margin-bottom:16px;}
     .grupo-empresa h2{margin:0 0 10px; font-size:1.02rem; color:var(--text)}
     .item-cancelamento{border-top:1px dashed var(--line); padding:10px 0}
     .item-cancelamento:first-child{border-top:none}
     .item-cancelamento p{margin:4px 0; color:var(--muted)}
+
     .total-cancelado{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px; box-shadow:var(--shadow); font-weight:800; margin-top:8px; margin-bottom:16px;}
-    .dados-analisados{text-align:center; color:var(--muted); font-size:.95em; margin-top:12px}
+    .dados-analisados{ text-align:center; color:var(--muted); font-size:.95em; margin-top:12px }
+
     .chart-box{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; margin:16px 0}
     #graficoCancelamentos{width:100%!important; height:320px!important}
+
+    .loading{position:fixed; inset:0; background:rgba(0,0,0,.55); display:none; align-items:center; justify-content:center; z-index:60}
+    .loading.show{display:flex}
+    .spinner{width:74px; height:74px; border-radius:50%; border:6px solid rgba(255,255,255,.25); border-top-color:#fff; animation:spin 1s linear infinite}
+    .loading p{color:#fff; font-weight:800; margin-top:12px; text-shadow:0 2px 6px rgba(0,0,0,.3)}
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    .btn-whats{ background:#25d366; color:#fff; border-color:#21b75a }
+    #botaoChatFlutuante{position:fixed; bottom:20px; right:20px; width:46px; height:46px;
+      background:linear-gradient(140deg,#0B2240, color-mix(in srgb,#0B2240 70%, #22d3ee)); color:#fff; border:none; border-radius:50%; display:flex; align-items:center; justify-content:center;
+      cursor:pointer; z-index:55; box-shadow:0 10px 28px rgba(2,6,23,.35); font-weight:900; letter-spacing:.3px}
+    #botaoChatFlutuante:hover{ transform:translateY(-1px); box-shadow:0 14px 34px rgba(2,6,23,.45) }
   </style>
 </head>
 <body>
   <header>
     <div class="head">
-      <a class="brand" href="#"><img src="https://github.com/ClenaStore/painel-principal/blob/main/img/GRUPO%20DV%20(1).png?raw=true" alt="Logo">
-        <span class="title">Cancelamentos</span></a>
+      <a class="brand" href="index.html"><img src="https://github.com/ClenaStore/painel-principal/blob/main/img/GRUPO%20DV%20(1).png?raw=true" alt="Logo"><span class="title">Cancelamentos</span></a>
       <div class="grow"></div>
-      <a class="btn only-desktop" href="#">📄 Relatórios</a>
+      <a class="btn only-desktop" href="index.relatorios.html">📄 Relatórios</a>
       <button id="themeToggle" class="btn">🌓 Tema</button>
+      <div class="user" id="userMenu">
+        <button class="user-btn" type="button"><img src="https://github.com/ClenaStore/grupodvthales/blob/main/paste/Imagem%20do%20WhatsApp%20de%202025-09-19%20%C3%A0(s)%2010.13.35_6590510e.jpg?raw=true" alt=""><strong style="font-size:13px">Thales</strong></button>
+        <div class="user-menu"><a href="perfil.html">👤 Meu Perfil</a><button onclick="handleLogout()">🚪 Sair</button></div>
+      </div>
     </div>
   </header>
 
+  <div id="loading" class="loading"><div style="display:flex; flex-direction:column; align-items:center;"><div class="spinner"></div><p>Carregando dados...</p></div></div>
+
   <div class="container">
     <div class="filters">
-      <div class="field"><label>Data inicial</label><input type="date" id="dataInicio"></div>
-      <div class="field"><label>Data final</label><input type="date" id="dataFim"></div>
+      <div class="field"><label>Data inicial</label><input type="date" id="dataInicio" /></div>
+      <div class="field"><label>Data final</label><input type="date" id="dataFim" /></div>
       <div class="field"><label>Empresa</label>
-        <select id="filtroEmpresa" disabled><option value="VILLA GOURMET" selected>VILLA GOURMET</option></select>
+        <select id="filtroEmpresa" disabled>
+          <option value="VILLA GOURMET" selected>VILLA GOURMET</option>
+        </select>
       </div>
-      <div class="field"><label>Busca</label><input type="text" id="filtroBusca" placeholder="Buscar item..."></div>
-      <div class="field"><label>&nbsp;</label><button id="btnFiltrar" class="btn action">📤 WhatsApp</button></div>
+      <div class="field"><label>Busca</label><input type="text" id="filtroBusca" placeholder="Buscar item..." /></div>
+      <div class="field"><label>&nbsp;</label><button id="btnFiltrar" class="btn action btn-whats">📤 WhatsApp</button></div>
     </div>
 
     <div class="total-cancelado">📊 Total Cancelado: <span id="totalCancelado"><strong>R$ 0,00</strong></span></div>
     <div id="infoPeriodo" class="dados-analisados"></div>
 
-    <!-- Gráfico -->
     <div id="graficoContainer" class="chart-box">
       <h3 style="margin:0 0 8px">📈 Evolução dos Cancelamentos</h3>
       <canvas id="graficoCancelamentos"></canvas>
@@ -91,72 +126,86 @@
 const URL_SCRIPT = '/api/cancelamentos';
 let cancelamentos = [];
 let chartCancelamentos = null;
-const $$ = s => document.querySelector(s);
+const $$ = sel => document.querySelector(sel);
+const showLoading = v => $$('#loading').classList.toggle('show', !!v);
 const BRL = v => (Number(v)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const fmtDataBR = iso => { if(!iso) return ''; const [y,m,d]=iso.split('-'); return `${d}/${m}/${y}`; };
 
 function preencherDataPadrao(){
-  const hoje = new Date(); const inicio = new Date(hoje.getFullYear(),hoje.getMonth(),1);
-  const iso = d => new Date(d.getFullYear(),d.getMonth(),d.getDate()).toISOString().split('T')[0];
-  $$('#dataInicio').value = iso(inicio); $$('#dataFim').value = iso(hoje);
+  const hoje = new Date(); const inicio = new Date(hoje); inicio.setDate(1);
+  const iso = d => new Date(d.getFullYear(), d.getMonth(), d.getDate()).toISOString().split('T')[0];
+  $$('#dataInicio').value = iso(inicio);
+  $$('#dataFim').value    = iso(hoje);
 }
 
 async function carregarDados(){
+  showLoading(true);
   try{
     const res = await fetch(URL_SCRIPT);
     cancelamentos = await res.json();
     aplicarFiltros();
-  }catch(e){ console.error(e); }
+  }catch(e){
+    console.error(e);
+    $$('#listaCancelamentos').innerHTML = `<p style="text-align:center; color:var(--muted)">Erro ao carregar dados.</p>`;
+  }finally{ showLoading(false); }
 }
 
 function aplicarFiltros(){
   const emp = "VILLA GOURMET";
   const busca = ($$('#filtroBusca').value||'').toLowerCase();
-  const di = $$('#dataInicio').value; const df = $$('#dataFim').value;
-  const grupos = {}; let totalGeral = 0;
+  const di = $$('#dataInicio').value;
+  const df = $$('#dataFim').value;
 
-  cancelamentos.forEach(c=>{
-    if(c.empresa !== emp) return;
-    if(busca && !String(c.item).toLowerCase().includes(busca)) return;
-    if(di && c.data < di) return;
-    if(df && c.data > df) return;
-    (grupos[c.empresa]||(grupos[c.empresa]=[])).push(c);
-  });
+  const grupo = cancelamentos.filter(c=>{
+    if(c.empresa !== emp) return false;
+    if(busca && !String(c.item).toLowerCase().includes(busca)) return false;
+    if(di && c.data < di) return false;
+    if(df && c.data > df) return false;
+    return true;
+  }).sort((a,b)=> a.data.localeCompare(b.data));
 
-  const lista = $$('#listaCancelamentos'); lista.innerHTML='';
-  Object.keys(grupos).forEach(empresa=>{
-    const grupo = grupos[empresa].sort((a,b)=> a.data.localeCompare(b.data));
-    let subtotal = grupo.reduce((s,c)=>s+(+c.valor||0),0); totalGeral += subtotal;
+  let subtotal = grupo.reduce((s,c)=>s+(+c.valor||0),0);
+
+  const lista = $$('#listaCancelamentos'); lista.innerHTML = '';
+  if(grupo.length){
     const card = document.createElement('div'); card.className='grupo-empresa';
-    card.innerHTML = `<h2>📅 ${fmtDataBR(grupo[0]?.data)} • 🏢 ${empresa} — <strong>Subtotal: ${BRL(subtotal)}</strong></h2>`;
+    card.innerHTML = `<h2>📅 ${fmtDataBR(grupo[0].data)} • 🏢 ${emp} — <strong>Subtotal: ${BRL(subtotal)}</strong></h2>`;
     grupo.forEach(c=>{
       card.innerHTML += `<div class="item-cancelamento"><p>${c.item||'-'}</p><p>💸 ${BRL(c.valor||0)}</p></div>`;
     });
     lista.appendChild(card);
     desenharGrafico(grupo);
-  });
-  $$('#totalCancelado').innerHTML = `<strong>${BRL(totalGeral)}</strong>`;
-  $$('#infoPeriodo').textContent = `Dados analisados • ${fmtDataBR(di)} → ${fmtDataBR(df)}`;
+  }
+
+  $$('#totalCancelado').innerHTML = `<strong>${BRL(subtotal)}</strong>`;
+  const periodoTxt = (di&&df) ? `${fmtDataBR(di)} → ${fmtDataBR(df)}` : 'Período não informado';
+  $$('#infoPeriodo').textContent = `Dados analisados • ${periodoTxt}`;
 }
 
 function desenharGrafico(lista){
-  const porData={}; lista.forEach(c=>{ porData[c.data]=(porData[c.data]||0)+(+c.valor||0); });
-  const labels=Object.keys(porData).sort(); const valores=labels.map(d=>porData[d]);
-  const ctx=$$('#graficoCancelamentos').getContext('2d');
+  const porData = {};
+  lista.forEach(c=>{ porData[c.data] = (porData[c.data]||0) + (Number(c.valor)||0); });
+  const labels = Object.keys(porData).sort();
+  const valores = labels.map(d=> porData[d]);
+
+  const ctx = $$('#graficoCancelamentos').getContext('2d');
   if(chartCancelamentos) chartCancelamentos.destroy();
-  chartCancelamentos=new Chart(ctx,{type:'line',
-    data:{labels:labels.map(fmtDataBR),datasets:[{label:'Cancelamentos por Dia',data:valores,
-      borderColor:'#e74c3c',backgroundColor:'rgba(231,76,60,.12)',tension:.25,fill:true}]},
-    options:{responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>BRL(c.parsed.y)}}},
-      scales:{y:{beginAtZero:true,ticks:{callback:v=>BRL(v)}}}}
+
+  chartCancelamentos = new Chart(ctx,{
+    type:'line',
+    data:{labels: labels.map(fmtDataBR), datasets:[{label:'Cancelamentos por Dia',data: valores,borderColor:'#e74c3c',backgroundColor:'rgba(231,76,60,.12)',tension:.25,pointRadius:4,fill:true}]},
+    options:{responsive:true, plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>BRL(c.parsed.y)}}}, scales:{y:{beginAtZero:true,ticks:{callback:v=>BRL(v)}}}}
   });
 }
 
-document.getElementById('dataInicio').addEventListener('change', aplicarFiltros);
-document.getElementById('dataFim').addEventListener('change', aplicarFiltros);
-document.getElementById('filtroBusca').addEventListener('input', aplicarFiltros);
+['change','input'].forEach(evt=>{
+  $$('#dataInicio').addEventListener(evt, aplicarFiltros);
+  $$('#dataFim').addEventListener(evt, aplicarFiltros);
+  $$('#filtroBusca').addEventListener(evt, aplicarFiltros);
+});
+$('#btnFiltrar').addEventListener('click', ()=>alert("Função WhatsApp ainda não configurada."));
 
-(function init(){preencherDataPadrao();carregarDados();})();
+(function init(){ preencherDataPadrao(); carregarDados(); })();
 </script>
 </body>
 </html>
