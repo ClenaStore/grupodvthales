@@ -206,10 +206,6 @@
     <!-- Filtros -->
     <div class="filters">
       <div class="field">
-        <label for="empresaFiltro">Empresa</label>
-        <select id="empresaFiltro"></select>
-      </div>
-      <div class="field">
         <label for="mesInicio">Mês início</label>
         <select id="mesInicio">
           <option value="">Todos</option>
@@ -318,17 +314,17 @@ function wireTooltipOnClick(chart, canvasId){
 
 /* ---------- Filtros helpers ---------- */
 function getFiltros() {
-  const empresa = $('#empresaFiltro').value;
   const mesInicio = $('#mesInicio').value;
   const mesFim = $('#mesFim').value;
 
   return dados.filter(d => {
     const mes = d.data.split("-")[1];
-    return (!empresa || d.empresa === empresa) &&
+    return d.empresa.toUpperCase().includes("VILLA GOURMET") &&
            (!mesInicio || mes >= mesInicio) &&
            (!mesFim || mes <= mesFim);
   });
 }
+
 
 /* ---------- Atualizações ---------- */
 function atualizarTudo(){
@@ -515,7 +511,7 @@ document.getElementById('modal').addEventListener('click', e=>{ if(e.target.id==
 
 /* ---------- WhatsApp ---------- */
 document.getElementById('btnWhats').addEventListener('click', ()=>{
-  const empresa = $('#empresaFiltro').value || 'TODAS';
+  const empresa = 'VILLA GOURMET LEM';
   const media = $('#media-mensal').textContent;
   const msg = `📊 Resumo de Vendas Delivery\n🏢 Empresa: ${empresa}\n📈 Média: ${media}`;
   const url = `https://wa.me/557799999999?text=${encodeURIComponent(msg)}`;
@@ -529,13 +525,6 @@ async function carregarDados(){
     const res = await fetch(URL_SCRIPT);
     dados = await res.json();
     // popular empresas
-    const empresas = [...new Set(dados.map(d=>d.empresa))].sort();
-    const sel = $('#empresaFiltro'); sel.innerHTML = `<option value="">TODAS</option>`;
-    empresas.forEach(emp=>{
-      const o=document.createElement('option'); o.value=emp; o.textContent=emp; sel.appendChild(o);
-    });
-    // reagir a mudanças
-    ['empresaFiltro','mesInicio','mesFim'].forEach(id=>document.getElementById(id).onchange = atualizarTudo);
     atualizarTudo();
   }catch(e){
     console.error(e);
