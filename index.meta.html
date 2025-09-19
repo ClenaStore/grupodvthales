@@ -377,8 +377,12 @@ async function carregarMetas(){
     if(range.end)   params.append('dataFim', ISO(range.end));
  const empresaSel = $$('#empresaFiltro').value;
 
-    const rsp = await fetch(`${urlBase}?${params.toString()}`);
-    const metas = await rsp.json();
+const rsp = await fetch(`${urlBase}?${params.toString()}`);
+let metas = await rsp.json();
+
+// 🔒 filtra apenas a empresa Villa Gourmet
+metas = metas.filter(r => r.Empresa === 'VILLA GOURMET');
+
 
     if(!metas.length){
       painel.innerHTML = `<p style="text-align:center; color:var(--muted)">Nenhum dado encontrado.</p>`;
