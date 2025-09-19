@@ -427,14 +427,6 @@ metas = metas.filter(r => r.Empresa === 'VILLA GOURMET');
       painel.appendChild(div);
     });
 
- if(empresaSel) {
-  // 🔒 gráfico só da Villa Gourmet
-  const dadosVilla = metas.filter(r => r.Empresa === 'VILLA GOURMET');
-  mostrarGrafico(dadosVilla);
-} else {
-  hideGrafico();
-}
-
   }catch(e){
     console.error(e);
     painel.innerHTML = `<p style="text-align:center; color:var(--muted)">Erro ao carregar dados.</p>`;
@@ -444,28 +436,6 @@ metas = metas.filter(r => r.Empresa === 'VILLA GOURMET');
   }
 }
 
-
-function mostrarGrafico(metas){
-  $$('#graficoContainer').style.display='block';
-  metas.sort((a,b)=> new Date(a.Data)-new Date(b.Data));
-  const dias = metas.map(m=> m.Data?.split('-').reverse().join('/'));
-  const vals = metas.map(m=> toNum(m.Realizado));
-
-  const ctx = $$('#graficoFaturamento').getContext('2d');
-  if(chart) chart.destroy();
-  chart = new Chart(ctx,{
-    type:'line',
-    data:{labels:dias, datasets:[{label:'Evolução do Faturamento', data:vals, fill:true,
-      borderColor:'#388e3c', backgroundColor:'rgba(56,142,60,.12)', tension:.25, pointRadius:5, pointHoverRadius:8, pointHitRadius:28}]},
-    options:{
-      responsive:true,
-      interaction:{mode:'nearest', intersect:true},
-      plugins:{ tooltip:{intersect:true, callbacks:{label:c=>'R$ '+(Number(c.parsed.y)||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}}},
-      scales:{ y:{ beginAtZero:true, ticks:{ callback:v=>'R$ '+v.toLocaleString('pt-BR') } } }
-    }
-  });
-}
-function hideGrafico(){ if(chart){ chart.destroy(); chart=null; } $$('#graficoContainer').style.display='none'; }
 
 /* ---------- Modal evolução por empresa (mês da data final) ---------- */
 async function abrirEvolucaoEmpresa(empresa){
