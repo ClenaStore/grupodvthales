@@ -398,15 +398,14 @@ function coletarEmpresas(){
   const a = pagamentosAll.map(p=>p.empresa);
   const b = abcAll.map(x=>x.empresa).filter(Boolean);
   let novas = uniq(a.concat(b));
-  novas = novas.filter(n => !isExcludedEmpresa(n));
-  if (empresasSelecionadas.size === 0) {
-    empresasSelecionadas = new Set(novas);
-  } else {
-    const keep = [...empresasSelecionadas].filter(e=> novas.includes(e));
-    empresasSelecionadas = new Set(keep.length ? keep : novas);
-  }
+
+  // 🔥 força mostrar só Villa
+  novas = novas.filter(n => n.toUpperCase().includes("VILLA GOURMET LEM"));
+
   empresas = novas;
+  empresasSelecionadas = new Set(["VILLA GOURMET LEM"]); // 👈 fixa Villa
 }
+
 function sumArrecadacaoEmpresa(emp){
   const {ini, fim} = getEffectiveABCRange();
   return abcAll
