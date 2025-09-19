@@ -378,12 +378,6 @@ let metas = await rsp.json();
 metas = metas.filter(r => r.Empresa === 'VILLA GOURMET');
 
 
-    if(!metas.length){
-      painel.innerHTML = `<p style="text-align:center; color:var(--muted)">Nenhum dado encontrado.</p>`;
-      hideGrafico();
-      return;
-    }
-
     // total de dias do mês e dias corridos até a data final do filtro
     const end = range.end || new Date();
     const totalDiasMes = daysInMonth(end);
@@ -429,8 +423,6 @@ metas = metas.filter(r => r.Empresa === 'VILLA GOURMET');
 
   }catch(e){
     console.error(e);
-    painel.innerHTML = `<p style="text-align:center; color:var(--muted)">Erro ao carregar dados.</p>`;
-    hideGrafico();
   }finally{
     showLoading(false);
   }
