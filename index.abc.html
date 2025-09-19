@@ -104,11 +104,7 @@
       <div class="card pad">
         <label>🏢 Empresa</label>
         <select id="filtroEmpresa">
-          <option value="MERCATTO">MERCATTO (padrão)</option>
-          <option value="PADARIA">PADARIA (carregando…)</option>
-          <option value="DELICIA">DELICIA (carregando…)</option>
           <option value="VILLA GOURMET">VILLA GOURMET (carregando…)</option>
-          <option value="M. KIDS">M. KIDS (carregando…)</option>
           <option value="">Todas (depois que carregar)</option>
         </select>
       </div>
@@ -146,7 +142,7 @@
 
 <script>
 const URL_SCRIPT='/api/abc_vendas';
-const EMPRESAS=['MERCATTO','PADARIA','DELICIA','VILLA GOURMET','M. KIDS'];
+const EMPRESAS=['VILLA GOURMET'];
 let CACHE={}, RAW=[], chartVendas=null;
 const $$=sel=>document.querySelector(sel);
 const BRL=n=>(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
