@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <title>Painel de Conciliação</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root{
+      --bg:#f6f7fb; --surface:#fff; --card:#fff; --text:#0f172a; --muted:#475569;
+      --line:#e5e7eb; --shadow:0 16px 36px rgba(15,23,42,.08);
+      --blue:#2563eb; --yellow:#f59e0b;
+    }
+    [data-theme="dark"] {
+      --bg:#0f172a; --surface:#1e293b; --card:#1e293b; --text:#f1f5f9; --muted:#94a3b8;
+      --line:#334155; --blue:#3b82f6; --yellow:#fbbf24;
+    }
+    body{margin:0; font-family:sans-serif; background:var(--bg); color:var(--text);}
+    header{position:sticky; top:0; z-index:40; backdrop-filter:saturate(160%) blur(8px);
+      background:var(--surface); border-bottom:1px solid var(--line);}
+    .head{max-width:1200px; margin:0 auto; padding:14px 18px; display:flex; align-items:center; gap:12px}
+    .brand{display:flex; align-items:center; gap:10px; text-decoration:none; color:inherit}
+    .brand img{height:42px}
+    .title{font-weight:800; letter-spacing:.2px; font-size:clamp(18px,1.6vw,22px)}
+    .grow{flex:1}
+    .btn{border:1px solid var(--line); background:var(--surface); color:var(--text);
+      padding:8px 12px; border-radius:12px; font-weight:800; cursor:pointer; display:inline-flex; gap:8px; align-items:center}
+    .btn:hover{box-shadow:var(--shadow); transform:translateY(-1px)}
+    .user{position:relative}
+    .user-btn{display:flex; align-items:center; gap:10px; border:1px solid var(--line);
+      background:var(--surface); padding:6px 8px; border-radius:999px; cursor:pointer}
+    .user-btn img{width:34px; height:34px; border-radius:50%; object-fit:cover; background:#ddd}
+    .user-menu{position:absolute; right:0; top:110%; background:var(--surface); border:1px solid var(--line);
+      border-radius:12px; min-width:200px; padding:6px; box-shadow:var(--shadow); display:none}
+    .user.open .user-menu{display:block}
+    .user-menu a,.user-menu button{display:flex; width:100%; padding:10px 12px; border-radius:10px;
+      border:none; background:transparent; color:var(--text); text-align:left; cursor:pointer; font-weight:600}
+    .user-menu a:hover,.user-menu button:hover{background:rgba(2,6,23,.06)}
+    .container{max-width:1200px; margin:0 auto; padding:20px}
+    .filters{display:grid; grid-template-columns:1fr 180px; gap:12px; margin-bottom:20px}
+    @media(max-width:700px){.filters{grid-template-columns:1fr;}}
+    .field label{display:block; margin:0 0 4px; font-weight:700; color:var(--muted)}
+    .field input,.field select{width:100%; padding:10px; border:1px solid var(--line); border-radius:10px;}
+    .card{background:var(--card); border:1px solid var(--line); border-radius:14px; box-shadow:var(--shadow); padding:16px; margin-bottom:18px}
+    .card h3{margin:0 0 12px}
+    .flex{display:flex; gap:24px; flex-wrap:wrap; align-items:center; justify-content:space-around}
+    .circle-wrap{display:flex; flex-direction:column; align-items:center; gap:10px}
+    canvas{width:120px!important; height:120px!important}
+    button{padding:8px 14px; border:1px solid var(--line); border-radius:10px; background:var(--surface); font-weight:700; cursor:pointer}
+    table{width:100%; border-collapse:collapse; font-size:.95rem}
+    th,td{padding:10px; border-bottom:1px solid var(--line); text-align:left}
+    td:last-child,th:last-child{text-align:right}
+    .loading{position:fixed; inset:0; background:rgba(0,0,0,.55); display:none; align-items:center; justify-content:center; z-index:60}
+    .loading.show{display:flex}
+    .spinner{width:74px; height:74px; border-radius:50%; border:6px solid rgba(255,255,255,.25); border-top-color:#fff; animation:spin 1s linear infinite}
+    .loading p{color:#fff; font-weight:800; margin-top:12px; text-shadow:0 2px 6px rgba(0,0,0,.3)}
+    @keyframes spin{to{transform:rotate(360deg)}}
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="head">
+    <a class="brand" href="#">
+      <img src="https://github.com/ClenaStore/painel-principal/blob/main/img/GRUPO%20DV%20(1).png?raw=true" alt="Logo">
+      <span class="title">Painel de Conciliação</span>
+    </a>
+    <div class="grow"></div>
+    <button id="btnTema" class="btn">🌓 Tema</button>
+    <div class="user" id="userMenu">
+      <button class="user-btn" type="button">
+        <img src="https://github.com/ClenaStore/grupodv/blob/main/paste/Imagem%20do%20WhatsApp%20de%202025-09-08%20%C3%A0(s)%2011.54.12_884bebc9.jpg?raw=true" alt="">
+        <strong style="font-size:13px">Leonardo</strong>
+      </button>
+      <div class="user-menu">
+        <a href="#">👤 Meu Perfil</a>
+        <button onclick="alert('Logout')">🚪 Sair</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div id="loading" class="loading" aria-hidden="true">
+  <div style="display:flex; flex-direction:column; align-items:center;">
+    <div class="spinner"></div>
+    <p>Carregando dados...</p>
+  </div>
+</div>
+
+<div class="container">
+  <div class="filters">
+    <div class="field">
+      <label>Empresa</label>
+      <select id="fEmpresa"></select>
+    </div>
+    <div class="field">
+      <label>Data</label>
+      <input type="date" id="fData">
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Conciliação</h3>
+    <div class="flex">
+      <div class="circle-wrap">
+        <canvas id="grafCartao"></canvas>
+        <button>Conciliar cartões</button>
+      </div>
+      <div class="circle-wrap">
+        <canvas id="grafBanco"></canvas>
+        <button>Conciliar bancos</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Valores Pendentes</h3>
+    <table>
+      <thead><tr><th>Data</th><th>Empresa</th><th>Tipo</th><th>Valor</th></tr></thead>
+      <tbody id="tblPend"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+const API_URL="https://script.google.com/macros/s/AKfycbxVmPiaFQptAWVN1GKNiy_LKW-QyovxVNsBMLV-NrEDVDchxLaCCAavqlQoQb4-IWmk/exec";
+let chartCartao, chartBanco;
+
+/* -------- THEME GLOBAL -------- */
+function aplicarTema(){
+  const tema=localStorage.getItem("tema")||"light";
+  document.documentElement.dataset.theme=tema;
+}
+aplicarTema();
+
+document.getElementById("btnTema").addEventListener("click",()=>{
+  const atual=document.documentElement.dataset.theme;
+  const novo=atual==="dark"?"light":"dark";
+  localStorage.setItem("tema",novo);
+  aplicarTema();
+});
+
+/* User menu */
+const user=document.getElementById('userMenu');
+user.querySelector('.user-btn').addEventListener('click',()=>user.classList.toggle('open'));
+window.addEventListener('click',e=>{if(!user.contains(e.target)) user.classList.remove('open');});
+
+/* Loading */
+function showLoading(v){document.getElementById('loading').classList.toggle('show',!!v);}
+
+/* Chart */
+function criaDoughnut(el, valor, cor){
+  const data={datasets:[{data:[valor,100-valor], backgroundColor:[cor,"#e5e7eb"], cutout:"70%"}]};
+  const cfg={type:'doughnut',data,
+    options:{plugins:{legend:{display:false},tooltip:{enabled:false}}},
+    plugins:[{id:"text",beforeDraw(c){
+      const {ctx,width}=c; ctx.save(); ctx.font="bold 20px sans-serif"; ctx.fillStyle=cor;
+      ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.fillText(valor+"%",width/2,c.chartArea.height/2+20);
+    }}]};
+  return new Chart(document.getElementById(el),cfg);
+}
+
+/* Carregar */
+async function carregar(){
+  showLoading(true);
+  const res=await fetch(API_URL);
+  const js=await res.json();
+
+  // Empresas
+  const empresas=[...new Set(js.map(r=>r.empresa))];
+  const sel=document.getElementById("fEmpresa");
+  sel.innerHTML=`<option value="">Todas</option>`+empresas.map(e=>`<option>${e}</option>`).join("");
+
+  // Dia anterior
+  const ontem=new Date(); ontem.setDate(ontem.getDate()-1);
+  const iso=ontem.toISOString().slice(0,10);
+  document.getElementById("fData").value=iso;
+
+  function aplicar(){
+    const emp=sel.value, data=document.getElementById("fData").value;
+    const pend=js.filter(r=>{
+      const okEmp=!emp||r.empresa===emp;
+      const okData=!data||r.data===data;
+      return okEmp&&okData;
+    });
+
+    const totCart=pend.filter(r=>r.tipo==="Cartão").length;
+    const concCart=pend.filter(r=>r.tipo==="Cartão" && r.status==="Conciliado").length;
+    const percCart=totCart?(Math.round(concCart/totCart*100)):100;
+
+    const totBco=pend.filter(r=>r.tipo==="Banco").length;
+    const concBco=pend.filter(r=>r.tipo==="Banco" && r.status==="Conciliado").length;
+    const percBco=totBco?(Math.round(concBco/totBco*100)):100;
+
+    if(chartCartao) chartCartao.destroy();
+    if(chartBanco) chartBanco.destroy();
+    chartCartao=criaDoughnut("grafCartao",percCart,"#2563eb");
+    chartBanco=criaDoughnut("grafBanco",percBco,"#f59e0b");
+
+    const tbody=document.getElementById("tblPend");
+    tbody.innerHTML=pend.filter(r=>r.status!=="Conciliado")
+      .map(r=>`<tr><td>${r.data}</td><td>${r.empresa}</td><td>${r.tipo}</td><td>R$ ${Number(r.valor).toLocaleString("pt-BR",{minimumFractionDigits:2})}</td></tr>`).join("");
+  }
+  aplicar();
+  sel.onchange=aplicar; document.getElementById("fData").onchange=aplicar;
+
+  showLoading(false);
+}
+carregar();
+</script>
+</body>
+</html>
