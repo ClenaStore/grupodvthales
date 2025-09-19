@@ -399,7 +399,11 @@
 
       <div>
         <label for="empresaFiltro">Empresa</label>
-        <select id="empresaFiltro"><option value="">Todas</option></select>
+      <!-- 🔒 Travado em Villa Gourmet -->
+<select id="empresaFiltro" disabled>
+  <option value="VILLA GOURMET" selected>VILLA GOURMET</option>
+</select>
+
       </div>
 
       <div><button id="btnFiltrar" type="button">Filtrar</button></div>
@@ -722,7 +726,8 @@ function drawGrid(){
 
     const inicio = document.getElementById("dataInicio").value;
     const fim = document.getElementById("dataFim").value;
-    const empresaSelecionada = document.getElementById("empresaFiltro").value;
+    // 🔒 Sempre filtrar apenas VILLA GOURMET
+const empresaSelecionada = "VILLA GOURMET";
     const painel = document.getElementById("painel");
     painel.innerHTML = "";
 
