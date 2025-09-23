@@ -644,8 +644,6 @@ function drawGrid(){
 
   let dados = [];
   let graficoAnualRef = null;
-  let empresaFoco = null;
-  let selecionadas = new Set();
 
   const BRL = n => (Number(n)||0).toLocaleString('pt-BR',{minimumFractionDigits:2, maximumFractionDigits:2});
   const MONTHS = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
@@ -993,13 +991,10 @@ function renderGraficoVilla(porMes, empresa, ano){
 
   }
 
-  function fecharModal(){
-    document.getElementById('modalAnual').classList.remove('open');
-    if (graficoAnualRef){ graficoAnualRef.destroy(); graficoAnualRef = null; }
-    selecionadas.clear();
-    document.getElementById('compareList').innerHTML = '';
-    empresaFoco = null;
-  }
+function fecharModal(){
+  document.getElementById('modalAnual').classList.remove('open');
+  if (graficoAnualRef){ graficoAnualRef.destroy(); graficoAnualRef = null; }
+}
 
   /* ===== Exportar PDF ===== */
   function exportarPDF() {
