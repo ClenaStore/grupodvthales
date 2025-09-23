@@ -457,14 +457,6 @@
           <canvas id="graficoAnual"></canvas>
         </div>
 
-        <aside class="compare-panel">
-          <h4>Comparar empresas</h4>
-          <div class="compare-actions">
-            <button class="mini-btn" id="btnCompareAll">Marcar todas</button>
-            <button class="mini-btn" id="btnCompareNone">Limpar</button>
-          </div>
-          <div id="compareList" class="checklist"></div>
-        </aside>
       </div>
     </div>
   </div>
@@ -925,9 +917,8 @@ async function aplicarFiltro() {
     document.getElementById('kpiSocioMes').textContent = `Mês atual (${MONTHS[mesAtualIdx]}): R$ ${BRL(socioMes)}`;
     document.getElementById('kpiErroAno').textContent  = `R$ ${BRL(erroAno)}`;
     document.getElementById('kpiErroMes').textContent  = `R$ ${BRL(erroMes)}`;
+renderGraficoVilla(porMes, empresa, ano);
 
-    montarChecklistComparacao(empresa);
-    renderGraficoComparacao(ano);
 
     document.getElementById('modalAnual').classList.add('open');
 
@@ -969,73 +960,37 @@ async function aplicarFiltro() {
     };
   }
 
-  function renderGraficoComparacao(ano){
-    const ctx = document.getElementById('graficoAnual').getContext('2d');
-    const marcas = [...selecionadas];
-    if (graficoAnualRef) { graficoAnualRef.destroy(); graficoAnualRef = null; }
+function renderGraficoVilla(porMes, empresa, ano){
+  const ctx = document.getElementById('graficoAnual').getContext('2d');
+  if (graficoAnualRef) { graficoAnualRef.destroy(); graficoAnualRef = null; }
 
-    if (marcas.length <= 1){
-      const emp = marcas[0] || empresaFoco;
-      const porMes = totaisMensaisPorEmpresa(emp, ano);
-      graficoAnualRef = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: MONTHS,
-          datasets: [{
-            label: 'Total vendido por mês',
-            data: porMes,
-            backgroundColor: MONTHS.map((_,i)=> i===new Date().getMonth() ? 'rgba(37,99,235,.55)' : 'rgba(37,99,235,.22)'),
-            borderColor: '#2563eb',
-            borderWidth: 1
-          }]
-        },
-        options: {
-          responsive: true, maintainAspectRatio: false,
-          interaction: { mode: 'nearest', axis: 'x', intersect: false },
-          events: ['mousemove','mouseout','click','touchstart','touchmove','touchend'],
-          plugins: {
-            legend: { display:false },
-            title: { display:true, text:`Total vendido por mês — ${emp}` },
-            tooltip: {
-              position: 'nearest',
-              callbacks:{ label: c => 'R$ ' + (Number(c.parsed.y)||0).toLocaleString('pt-BR',{minimumFractionDigits:2}) }
-            }
-          },
-          scales: { y: { beginAtZero:true } }
-        }
-      });
-    } else {
-      const datasets = marcas.map((emp, i)=>({
-        label: emp,
-        data: totaisMensaisPorEmpresa(emp, ano),
-        borderColor: colorFor(i),
-        backgroundColor: colorFor(i),
-        fill: false,
-        tension: .25,
-        pointRadius: POINT_RADIUS,
-        pointHoverRadius: HOVER_RADIUS,
-        pointHitRadius: HIT_RADIUS
-      }));
-      graficoAnualRef = new Chart(ctx, {
-        type: 'line',
-        data: { labels: MONTHS, datasets },
-        options: {
-          responsive:true, maintainAspectRatio:false,
-          interaction: { mode: 'nearest', axis: 'x', intersect: false },
-          elements: { point: { radius: POINT_RADIUS, hoverRadius: HOVER_RADIUS, hitRadius: HIT_RADIUS } },
-          events: ['mousemove','mouseout','click','touchstart','touchmove','touchend'],
-          plugins:{
-            legend:{ display:true },
-            title:{ display:true, text:`Evolução comparada por mês — ${ano}` },
-            tooltip:{
-              position: 'nearest',
-              callbacks:{ label: c => `${c.dataset.label}: R$ ${(Number(c.parsed.y)||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}` }
-            }
-          },
-          scales:{ y:{ beginAtZero:true } }
-        }
-      });
+  graficoAnualRef = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: MONTHS,
+      datasets: [{
+        label: 'Total vendido por mês',
+        data: porMes,
+        backgroundColor: MONTHS.map((_,i)=>
+          i===new Date().getMonth()
+            ? 'rgba(37,99,235,.55)'
+            : 'rgba(37,99,235,.22)'
+        ),
+        borderColor: '#2563eb',
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display:false },
+        title: { display:true, text:`Total vendido por mês — ${empresa}` }
+      },
+      scales: { y: { beginAtZero:true } }
     }
+  });
+}
+
   }
 
   function fecharModal(){
