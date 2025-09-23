@@ -71,6 +71,20 @@
       font-weight: 800; letter-spacing:.2px;
       font-size: clamp(18px, 1.6vw, 22px);
     }
+    .empresa-box {
+  display: flex;
+  flex-direction: column;
+}
+
+.empresa-conteudo {
+  flex: 1; /* ocupa o espaço que sobrar */
+}
+
+.grafico-desktop,
+.legend {
+  margin-top: auto; /* garante que fiquem grudados embaixo */
+}
+
     .head-spacer{ flex:1 }
     .icon-btn{
       border:1px solid var(--line); background: var(--surface);
@@ -145,21 +159,24 @@
     }
     .range-label{ color: var(--muted); font-weight:700 }
 
-    #painel{
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 16px;
-    }
+    #painel {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); /* flexível */
+  gap: 16px;
+}
 
-    .empresa-box{
-      background: var(--card);
-      border: 1px solid var(--line);
-      border-radius: 12px;
-      padding: 16px;
-      box-shadow: var(--shadow);
-      font-size: 0.95em;
-      overflow: hidden;
-    }
+.empresa-box {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: var(--shadow);
+  font-size: 0.95em;
+  overflow: hidden;
+  word-wrap: break-word;       /* quebra palavras longas */
+  overflow-wrap: anywhere;     /* garante quebra em qualquer ponto */
+}
+
     .empresa-box h2{
       margin: 0 0 10px;
       font-size: clamp(1.05rem, .7vw + 1rem, 1.25rem);
@@ -371,8 +388,8 @@
 
       <div class="user" id="userMenu">
         <button class="user-btn" type="button" title="Perfil">
-          <img src="https://github.com/ClenaStore/grupodvthales/blob/main/paste/Imagem%20do%20WhatsApp%20de%202025-09-19%20%C3%A0(s)%2010.13.35_6590510e.jpg?raw=true" alt="Usuário">
-          <strong style="font-size:13px">Thales</strong>
+          <img src="https://github.com/ClenaStore/grupodv/blob/main/paste/Imagem%20do%20WhatsApp%20de%202025-09-08%20%C3%A0(s)%2011.54.12_884bebc9.jpg?raw=true" alt="Usuário">
+          <strong style="font-size:13px">Leonardo</strong>
         </button>
         <div class="user-menu">
           <a href="perfil.html">👤 Meu Perfil</a>
@@ -399,11 +416,7 @@
 
       <div>
         <label for="empresaFiltro">Empresa</label>
-      <!-- 🔒 Travado em Villa Gourmet -->
-<select id="empresaFiltro" disabled>
-  <option value="VILLA GOURMET" selected>VILLA GOURMET</option>
-</select>
-
+        <select id="empresaFiltro"><option value="">Todas</option></select>
       </div>
 
       <div><button id="btnFiltrar" type="button">Filtrar</button></div>
@@ -443,6 +456,7 @@
         <div id="graficoAnualWrap">
           <canvas id="graficoAnual"></canvas>
         </div>
+
 
       </div>
     </div>
@@ -712,81 +726,109 @@ function drawGrid(){
     }
   }
 
-  async function aplicarFiltro() {
-    showLoading("Aplicando filtros…");
-    await new Promise(r=>setTimeout(r, 50)); // garante que o overlay apareça
+async function aplicarFiltro() {
+  showLoading("Aplicando filtros…");
+  await new Promise(r => setTimeout(r, 50));
 
-    const inicio = document.getElementById("dataInicio").value;
-    const fim = document.getElementById("dataFim").value;
-    // 🔒 Sempre filtrar apenas VILLA GOURMET
-const empresaSelecionada = "VILLA GOURMET";
-    const painel = document.getElementById("painel");
-    painel.innerHTML = "";
+  const inicio = document.getElementById("dataInicio").value;
+  const fim = document.getElementById("dataFim").value;
+  const empresaSelecionada = document.getElementById("empresaFiltro").value;
+  const painel = document.getElementById("painel");
+  painel.innerHTML = "";
 
-    const dadosFiltrados = dados.filter(item => {
-      const dataOk = (!inicio || item.Data >= inicio) && (!fim || item.Data <= fim);
-      const empresaOk = !empresaSelecionada || item.Empresa === empresaSelecionada;
-      return dataOk && empresaOk;
+  const dadosFiltrados = dados.filter(item => {
+    const dataOk = (!inicio || item.Data >= inicio) && (!fim || item.Data <= fim);
+    const empresaOk = !empresaSelecionada || item.Empresa === empresaSelecionada;
+    return dataOk && empresaOk;
+  });
+
+  const empresas = [...new Set(dadosFiltrados.map(item => item.Empresa))];
+
+  empresas.forEach(emp => {
+    const dadosEmpresa = dadosFiltrados.filter(i => i.Empresa === emp);
+    const agrupado = {};
+    dadosEmpresa.forEach(item => {
+      let cat = normalize(item.Categoria);
+      if (cat === 'PREJUIZO' || cat === 'DESPERDICIO') cat = 'ERROS DE GARCONS';
+      const valor = parseFloat(item.Valor) || 0;
+      agrupado[cat] = (agrupado[cat] || 0) + valor;
     });
 
-    const empresas = [...new Set(dadosFiltrados.map(item => item.Empresa))];
+    const total = Object.values(agrupado).reduce((a, b) => a + b, 0);
+    const box = document.createElement("div");
+    box.className = "empresa-box";
 
-    empresas.forEach(emp => {
-      const dadosEmpresa = dadosFiltrados.filter(i => i.Empresa === emp);
-      const agrupado = {};
-      dadosEmpresa.forEach(item => {
-        let cat = normalize(item.Categoria);
-        if (cat === 'PREJUIZO' || cat === 'DESPERDICIO') cat = 'ERROS DE GARCONS';
-        const valor = parseFloat(item.Valor) || 0;
-        agrupado[cat] = (agrupado[cat] || 0) + valor;
-      });
+    const conteudo = document.createElement("div");
+    conteudo.className = "empresa-conteudo";
 
-      const total = Object.values(agrupado).reduce((a, b) => a + b, 0);
-      const box = document.createElement("div");
-      box.className = "empresa-box";
+    // Cabeçalho + lista
+    let html = `<h2>${emp.toUpperCase()} — R$ ${BRL(total)}</h2><ul>`;
+    for (const catNorm in agrupado) {
+      const nomeExib = displayName(catNorm);
+      const emoji = emojis[nomeExib] || "📌";
+      const valor = BRL(agrupado[catNorm]);
+      html += `<li>${emoji} ${nomeExib}: R$ ${valor}</li>`;
+    }
+    html += `</ul>`;
 
-      const conteudo = document.createElement("div");
-      conteudo.className = "empresa-conteudo";
+    // 🔑 Se for o restaurante → soma consolidada
+    if (normalize(emp) === "CARNEIRO MERCATTO RESTAURANTE") {
+      const empresasSomadas = ["CARNEIRO MERCATTO RESTAURANTE", "CARNEIRO MERCATTO EMPORIO", "M.KIDS"];
+      const dadosSomados = dadosFiltrados.filter(i => empresasSomadas.includes(normalize(i.Empresa)));
+      const totalSoma = dadosSomados.reduce((acc, i) => acc + (parseFloat(i.Valor) || 0), 0);
 
-      let html = `<h2>${emp.toUpperCase()} — R$ ${BRL(total)}</h2><ul>`;
-      for (const catNorm in agrupado) {
-        const nomeExib = displayName(catNorm);
-        const emoji = emojis[nomeExib] || "📌";
-        const valor = BRL(agrupado[catNorm]);
-        html += `<li>${emoji} ${nomeExib}: R$ ${valor}</li>`;
-      }
-      html += `</ul>`;
-      conteudo.innerHTML = html;
+      html += `
+        <div style="
+          margin-top:12px;
+          padding:10px;
+          border:2px solid var(--brand);
+          border-radius:10px;
+          background:color-mix(in srgb, var(--surface) 92%, #fff)">
+          <strong style="color:var(--brand)">🔹 Faturamento do Carneiro Mercatto</strong><br>
+          <span style="font-size:1.1rem; font-weight:700">
+            R$ ${BRL(totalSoma)}
+          </span>
+          <small style="display:block; margin-top:4px; color:var(--muted)">
+            (Restaurante + Empório + M.Kids)
+          </small>
+        </div>
+      `;
+    }
 
-      const canvasContainer = document.createElement("div");
-      canvasContainer.className = "grafico-desktop";
-      const canvas = document.createElement("canvas");
-      canvasContainer.appendChild(canvas);
+    conteudo.innerHTML = html;
 
-      const legend = document.createElement("div");
-      legend.className = "legend";
-      Object.keys(agrupado).forEach((catNorm, i) => {
-        const cor = `hsl(${i * 35}, 70%, 60%)`;
-        const item = document.createElement("span");
-        item.style.color = cor;
-        item.innerHTML = displayName(catNorm);
-        legend.appendChild(item);
-      });
+    // Gráfico + legenda
+    const canvasContainer = document.createElement("div");
+    canvasContainer.className = "grafico-desktop";
+    const canvas = document.createElement("canvas");
+    canvasContainer.appendChild(canvas);
 
-      box.appendChild(conteudo);
-      box.appendChild(canvasContainer);
-      box.appendChild(legend);
-      painel.appendChild(box);
-
-      desenharGrafico(canvas, agrupado);
-      canvasContainer.addEventListener('click', () => abrirEvolucaoAnual(emp));
+    const legend = document.createElement("div");
+    legend.className = "legend";
+    Object.keys(agrupado).forEach((catNorm, i) => {
+      const cor = `hsl(${i * 35}, 70%, 60%)`;
+      const item = document.createElement("span");
+      item.style.color = cor;
+      item.innerHTML = displayName(catNorm);
+      legend.appendChild(item);
     });
 
-    if (empresas.length === 0)
-      painel.innerHTML = "<p style='text-align:center; color: var(--muted)'>Nenhum dado encontrado para os filtros selecionados.</p>";
+    box.appendChild(conteudo);
+    box.appendChild(canvasContainer);
+    box.appendChild(legend);
+    painel.appendChild(box);
 
-    hideLoading();
+    desenharGrafico(canvas, agrupado);
+    canvasContainer.addEventListener('click', () => abrirEvolucaoAnual(emp));
+  });
+
+  if (empresas.length === 0) {
+    painel.innerHTML = "<p style='text-align:center; color: var(--muted)'>Nenhum dado encontrado para os filtros selecionados.</p>";
   }
+
+  hideLoading();
+}
+
 
   function displayName(catNorm){
     if (catNorm === 'PREJUIZO' || catNorm === 'DESPERDICIO') return 'ERROS DE GARÇONS';
@@ -833,7 +875,9 @@ const empresaSelecionada = "VILLA GOURMET";
   }
 
   /* ===== Evolução Anual ===== */
-  function abrirEvolucaoAnual(empresa){
+function abrirEvolucaoAnual(){
+  const empresa = "VILLA GOURMET";
+
     empresaFoco = empresa;
     selecionadas = new Set([empresa]);
 
@@ -873,8 +917,8 @@ const empresaSelecionada = "VILLA GOURMET";
     document.getElementById('kpiErroAno').textContent  = `R$ ${BRL(erroAno)}`;
     document.getElementById('kpiErroMes').textContent  = `R$ ${BRL(erroMes)}`;
 
-renderGraficoUnico(empresa, ano);
-
+    montarChecklistComparacao(empresa);
+    renderGraficoComparacao(ano);
 
     document.getElementById('modalAnual').classList.add('open');
 
@@ -917,40 +961,31 @@ renderGraficoUnico(empresa, ano);
   }
 
   function renderGraficoComparacao(ano){
-    const ctx = document.getElementById('graficoAnual').getContext('2d');
-    const marcas = [...selecionadas];
-    if (graficoAnualRef) { graficoAnualRef.destroy(); graficoAnualRef = null; }
+const ctx = document.getElementById('graficoAnual').getContext('2d');
+if (graficoAnualRef) { graficoAnualRef.destroy(); graficoAnualRef = null; }
 
-    if (marcas.length <= 1){
-      const emp = marcas[0] || empresaFoco;
-      const porMes = totaisMensaisPorEmpresa(emp, ano);
-      graficoAnualRef = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: MONTHS,
-          datasets: [{
-            label: 'Total vendido por mês',
-            data: porMes,
-            backgroundColor: MONTHS.map((_,i)=> i===new Date().getMonth() ? 'rgba(37,99,235,.55)' : 'rgba(37,99,235,.22)'),
-            borderColor: '#2563eb',
-            borderWidth: 1
-          }]
-        },
-        options: {
-          responsive: true, maintainAspectRatio: false,
-          interaction: { mode: 'nearest', axis: 'x', intersect: false },
-          events: ['mousemove','mouseout','click','touchstart','touchmove','touchend'],
-          plugins: {
-            legend: { display:false },
-            title: { display:true, text:`Total vendido por mês — ${emp}` },
-            tooltip: {
-              position: 'nearest',
-              callbacks:{ label: c => 'R$ ' + (Number(c.parsed.y)||0).toLocaleString('pt-BR',{minimumFractionDigits:2}) }
-            }
-          },
-          scales: { y: { beginAtZero:true } }
-        }
-      });
+graficoAnualRef = new Chart(ctx, {
+  type: 'bar',
+  data: {
+    labels: MONTHS,
+    datasets: [{
+      label: 'Total vendido por mês',
+      data: porMes,
+      backgroundColor: MONTHS.map((_,i)=> i===new Date().getMonth() ? 'rgba(37,99,235,.55)' : 'rgba(37,99,235,.22)'),
+      borderColor: '#2563eb',
+      borderWidth: 1
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { display:false },
+      title: { display:true, text:`Total vendido por mês — ${empresa}` }
+    },
+    scales: { y: { beginAtZero:true } }
+  }
+});
+
     } else {
       const datasets = marcas.map((emp, i)=>({
         label: emp,
@@ -983,14 +1018,6 @@ renderGraficoUnico(empresa, ano);
         }
       });
     }
-  }
-
-  function fecharModal(){
-    document.getElementById('modalAnual').classList.remove('open');
-    if (graficoAnualRef){ graficoAnualRef.destroy(); graficoAnualRef = null; }
-    selecionadas.clear();
-    document.getElementById('compareList').innerHTML = '';
-    empresaFoco = null;
   }
 
   /* ===== Exportar PDF ===== */
