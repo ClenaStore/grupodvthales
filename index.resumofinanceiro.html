@@ -457,7 +457,14 @@
           <canvas id="graficoAnual"></canvas>
         </div>
 
-
+        <aside class="compare-panel">
+          <h4>Comparar empresas</h4>
+          <div class="compare-actions">
+            <button class="mini-btn" id="btnCompareAll">Marcar todas</button>
+            <button class="mini-btn" id="btnCompareNone">Limpar</button>
+          </div>
+          <div id="compareList" class="checklist"></div>
+        </aside>
       </div>
     </div>
   </div>
@@ -732,15 +739,19 @@ async function aplicarFiltro() {
 
   const inicio = document.getElementById("dataInicio").value;
   const fim = document.getElementById("dataFim").value;
-  const empresaSelecionada = document.getElementById("empresaFiltro").value;
+
+  // 🔑 trava para apenas VILLA GOURMET
+  const empresaSelecionada = "VILLA GOURMET";
+
   const painel = document.getElementById("painel");
   painel.innerHTML = "";
 
   const dadosFiltrados = dados.filter(item => {
     const dataOk = (!inicio || item.Data >= inicio) && (!fim || item.Data <= fim);
-    const empresaOk = !empresaSelecionada || item.Empresa === empresaSelecionada;
+    const empresaOk = item.Empresa === empresaSelecionada;
     return dataOk && empresaOk;
   });
+
 
   const empresas = [...new Set(dadosFiltrados.map(item => item.Empresa))];
 
@@ -875,9 +886,7 @@ async function aplicarFiltro() {
   }
 
   /* ===== Evolução Anual ===== */
-function abrirEvolucaoAnual(){
-  const empresa = "VILLA GOURMET";
-
+  function abrirEvolucaoAnual(empresa){
     empresaFoco = empresa;
     selecionadas = new Set([empresa]);
 
@@ -961,31 +970,40 @@ function abrirEvolucaoAnual(){
   }
 
   function renderGraficoComparacao(ano){
-const ctx = document.getElementById('graficoAnual').getContext('2d');
-if (graficoAnualRef) { graficoAnualRef.destroy(); graficoAnualRef = null; }
+    const ctx = document.getElementById('graficoAnual').getContext('2d');
+    const marcas = [...selecionadas];
+    if (graficoAnualRef) { graficoAnualRef.destroy(); graficoAnualRef = null; }
 
-graficoAnualRef = new Chart(ctx, {
-  type: 'bar',
-  data: {
-    labels: MONTHS,
-    datasets: [{
-      label: 'Total vendido por mês',
-      data: porMes,
-      backgroundColor: MONTHS.map((_,i)=> i===new Date().getMonth() ? 'rgba(37,99,235,.55)' : 'rgba(37,99,235,.22)'),
-      borderColor: '#2563eb',
-      borderWidth: 1
-    }]
-  },
-  options: {
-    responsive: true, maintainAspectRatio: false,
-    plugins: {
-      legend: { display:false },
-      title: { display:true, text:`Total vendido por mês — ${empresa}` }
-    },
-    scales: { y: { beginAtZero:true } }
-  }
-});
-
+    if (marcas.length <= 1){
+      const emp = marcas[0] || empresaFoco;
+      const porMes = totaisMensaisPorEmpresa(emp, ano);
+      graficoAnualRef = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: MONTHS,
+          datasets: [{
+            label: 'Total vendido por mês',
+            data: porMes,
+            backgroundColor: MONTHS.map((_,i)=> i===new Date().getMonth() ? 'rgba(37,99,235,.55)' : 'rgba(37,99,235,.22)'),
+            borderColor: '#2563eb',
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          interaction: { mode: 'nearest', axis: 'x', intersect: false },
+          events: ['mousemove','mouseout','click','touchstart','touchmove','touchend'],
+          plugins: {
+            legend: { display:false },
+            title: { display:true, text:`Total vendido por mês — ${emp}` },
+            tooltip: {
+              position: 'nearest',
+              callbacks:{ label: c => 'R$ ' + (Number(c.parsed.y)||0).toLocaleString('pt-BR',{minimumFractionDigits:2}) }
+            }
+          },
+          scales: { y: { beginAtZero:true } }
+        }
+      });
     } else {
       const datasets = marcas.map((emp, i)=>({
         label: emp,
@@ -1018,6 +1036,14 @@ graficoAnualRef = new Chart(ctx, {
         }
       });
     }
+  }
+
+  function fecharModal(){
+    document.getElementById('modalAnual').classList.remove('open');
+    if (graficoAnualRef){ graficoAnualRef.destroy(); graficoAnualRef = null; }
+    selecionadas.clear();
+    document.getElementById('compareList').innerHTML = '';
+    empresaFoco = null;
   }
 
   /* ===== Exportar PDF ===== */
