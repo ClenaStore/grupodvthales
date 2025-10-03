@@ -740,11 +740,28 @@ function anosDisponiveis(){
     try{
       const resposta = await fetch(url);
       dados = await resposta.json();
- const select = document.getElementById("empresaFiltro");
-// 🔒 trava apenas Villa Gourmet
-select.innerHTML = '<option value="VILLA GOURMET" selected>Villa Gourmet</option>';
-await aplicarFiltro();
+      const empresas = [...new Set(
+  dados
+    .map(item => item.Empresa)
+    // 🔒 filtra fora empresas que começam com "Almoço"
+    .filter(emp => !/^ALMOCO/i.test(normalize(emp)))
+)].sort();
 
+const select = document.getElementById("empresaFiltro");
+select.innerHTML = ''; // zera opções
+
+// força sempre Villa Gourmet
+const option = document.createElement("option");
+option.value = "VILLA GOURMET";
+option.textContent = "VILLA GOURMET";
+option.selected = true;
+select.appendChild(option);
+
+// trava o seletor
+select.disabled = true;
+
+
+      await aplicarFiltro();
     }catch(e){
       console.error(e);
       hideLoading();
@@ -758,8 +775,7 @@ async function aplicarFiltro() {
 
   const inicio = document.getElementById("dataInicio").value;
   const fim = document.getElementById("dataFim").value;
-  // 🔒 força sempre Villa Gourmet
-const empresaSelecionada = "VILLA GOURMET";
+  const empresaSelecionada = document.getElementById("empresaFiltro").value;
   const painel = document.getElementById("painel");
   painel.innerHTML = "";
 
@@ -1016,43 +1032,44 @@ function abrirEvolucaoAnual(empresa){
 }
 
 
-  function montarChecklistComparacao(){
-    const list = document.getElementById('compareList');
-    list.innerHTML = '';
-    const todas = empresasUnicas();
+function montarChecklistComparacao(){
+  const list = document.getElementById('compareList');
+  list.innerHTML = '';
 
-    todas.forEach((emp, idx)=>{
-      const id = `cmp_${idx}`;
-      const wrap = document.createElement('label');
-      wrap.className = 'check-item';
-      wrap.innerHTML = `
-        <input type="checkbox" id="${id}" value="${emp}" ${selecionadas.has(emp)?'checked':''}/>
-        <span>${emp}</span>
-      `;
-      wrap.querySelector('input').addEventListener('change', (e)=>{
-        if(e.target.checked) selecionadas.add(emp); else selecionadas.delete(emp);
-const anoSel = document.getElementById("anoSelect").value || new Date().getFullYear();
-renderGraficoComparacao(anoSel);
+  // 🔒 remove empresas que começam com "ALMOCO"
+  const todas = empresasUnicas().filter(emp => !/^ALMOCO/i.test(normalize(emp)));
 
-      });
-      list.appendChild(wrap);
+  todas.forEach((emp, idx)=>{
+    const id = `cmp_${idx}`;
+    const wrap = document.createElement('label');
+    wrap.className = 'check-item';
+    wrap.innerHTML = `
+      <input type="checkbox" id="${id}" value="${emp}" ${selecionadas.has(emp)?'checked':''}/>
+      <span>${emp}</span>
+    `;
+    wrap.querySelector('input').addEventListener('change', (e)=>{
+      if(e.target.checked) selecionadas.add(emp); else selecionadas.delete(emp);
+      const anoSel = document.getElementById("anoSelect").value || new Date().getFullYear();
+      renderGraficoComparacao(anoSel);
     });
+    list.appendChild(wrap);
+  });
 
- document.getElementById('btnCompareAll').onclick = ()=>{
-  todas.forEach(emp=>selecionadas.add(emp));
-  montarChecklistComparacao();
-  const anoSel = document.getElementById("anoSelect").value || new Date().getFullYear();
-  renderGraficoComparacao(anoSel);
-};
-document.getElementById('btnCompareNone').onclick = ()=>{
-  selecionadas.clear();
-  selecionadas.add(empresaFoco);
-  montarChecklistComparacao();
-  const anoSel = document.getElementById("anoSelect").value || new Date().getFullYear();
-  renderGraficoComparacao(anoSel);
-};
+  document.getElementById('btnCompareAll').onclick = ()=>{
+    todas.forEach(emp=>selecionadas.add(emp));
+    montarChecklistComparacao();
+    const anoSel = document.getElementById("anoSelect").value || new Date().getFullYear();
+    renderGraficoComparacao(anoSel);
+  };
+  document.getElementById('btnCompareNone').onclick = ()=>{
+    selecionadas.clear();
+    selecionadas.add(empresaFoco);
+    montarChecklistComparacao();
+    const anoSel = document.getElementById("anoSelect").value || new Date().getFullYear();
+    renderGraficoComparacao(anoSel);
+  };
+}
 
-  }
 
   function renderGraficoComparacao(ano){
     const ctx = document.getElementById('graficoAnual').getContext('2d');
