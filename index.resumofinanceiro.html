@@ -452,11 +452,25 @@
         </div>
       </div>
 
-      <div class="anual-grid">
-        <div id="graficoAnualWrap">
-          <canvas id="graficoAnual"></canvas>
-        </div>
+    <div class="anual-grid">
+  <div id="graficoAnualWrap">
+    <canvas id="graficoAnual"></canvas>
+  </div>
+  <div style="margin:10px 0;">
+    <label for="anoSelect">Ano</label>
+    <select id="anoSelect"></select>
+  </div>
+</div>
 
+<!-- 🔽 Comparar empresas embaixo -->
+<aside class="compare-panel" style="margin-top:15px">
+  <h4>Comparar empresas</h4>
+  <div class="compare-actions">
+    <button class="mini-btn" id="btnCompareAll">Marcar todas</button>
+    <button class="mini-btn" id="btnCompareNone">Limpar</button>
+  </div>
+  <div id="compareList" class="checklist"></div>
+</aside>
       </div>
     </div>
   </div>
@@ -633,17 +647,37 @@ function drawGrid(){
   Chart.defaults.events = ['mousemove','mouseout','click','touchstart','touchmove','touchend'];
 
   // Emojis
-  const emojis = {
-    "DINHEIRO": "💵", "CRÉDITO": "💳", "DÉBITO": "🏦", "PIX": "💲",
-    "ONLINE": "💻", "CREDIÁRIO": "📋", "VOUCHER": "🎫", "BONIFICAÇÃO": "🎁",
-    "CONSUMO INTERNO": "👔", "BOLETO": "📃", "MARKETING": "📣", "CONSUMO SÓCIO": "👔",
-    "CATÁLOGO DELIVERY": "🛒", "IFOOD": "🍱", "DELIVERY MUCH": "🍔",
-    "TRANSFERÊNCIA BANCÁRIA": "🏛️", "ERROS DE GARÇONS": "🧯", "OUTROS": "🗂",
-    "PREJUÍZO": "🧯", "DESPERDÍCIO": "🧯", "DESPERDICIO": "🧯"
-  };
+const emojis = {
+  "DINHEIRO": "💵",
+  "CRÉDITO": "💳",
+  "DÉBITO": "🏦",
+  "PIX": "💲",
+  "ONLINE": "💻",
+  "CREDIÁRIO": "📋",
+  "VOUCHER": "🎫",
+  "BONIFICAÇÃO": "🎁",
+  "CONSUMO INTERNO": "👔",
+  "CONSUMO SÓCIO": "🧑‍🤝‍🧑",
+  "BOLETO": "📃",
+  "MARKETING": "📣",
+  "CATÁLOGO DELIVERY": "🛒",
+  "IFOOD": "🍱",
+  "DELIVERY MUCH": "🍔",
+  "TRANSFERÊNCIA BANCÁRIA": "🏛️",
+  "ERROS DE GARÇONS": "🧯",
+  "SEM FATURAMENTO": "📑",
+  "OUTROS": "🗂"
+};
+
 
   let dados = [];
   let graficoAnualRef = null;
+  let empresaFoco = null;
+  let selecionadas = new Set();
+function anosDisponiveis(){
+  const anos = [...new Set(dados.map(d => String(d.Data).substring(0,4)))];
+  return anos.sort(); // ordem crescente
+}
 
   const BRL = n => (Number(n)||0).toLocaleString('pt-BR',{minimumFractionDigits:2, maximumFractionDigits:2});
   const MONTHS = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
@@ -706,16 +740,11 @@ function drawGrid(){
     try{
       const resposta = await fetch(url);
       dados = await resposta.json();
-      const empresas = [...new Set(dados.map(item => item.Empresa))].sort();
-      const select = document.getElementById("empresaFiltro");
-      select.innerHTML = '<option value="">Todas</option>';
-      empresas.forEach(emp => {
-        const option = document.createElement("option");
-        option.value = emp;
-        option.textContent = emp;
-        select.appendChild(option);
-      });
-      await aplicarFiltro();
+ const select = document.getElementById("empresaFiltro");
+// 🔒 trava apenas Villa Gourmet
+select.innerHTML = '<option value="VILLA GOURMET" selected>Villa Gourmet</option>';
+await aplicarFiltro();
+
     }catch(e){
       console.error(e);
       hideLoading();
@@ -729,24 +758,33 @@ async function aplicarFiltro() {
 
   const inicio = document.getElementById("dataInicio").value;
   const fim = document.getElementById("dataFim").value;
-
-  // 🔑 trava para apenas VILLA GOURMET
-  const empresaSelecionada = "VILLA GOURMET";
-
+  // 🔒 força sempre Villa Gourmet
+const empresaSelecionada = "VILLA GOURMET";
   const painel = document.getElementById("painel");
   painel.innerHTML = "";
 
   const dadosFiltrados = dados.filter(item => {
     const dataOk = (!inicio || item.Data >= inicio) && (!fim || item.Data <= fim);
-    const empresaOk = item.Empresa === empresaSelecionada;
+    const empresaOk = !empresaSelecionada || item.Empresa === empresaSelecionada;
     return dataOk && empresaOk;
   });
-
 
   const empresas = [...new Set(dadosFiltrados.map(item => item.Empresa))];
 
   empresas.forEach(emp => {
+
+// 🔒 ignora os Almoços (para não criarem cards próprios)
+if (
+  normalize(emp) === "ALMOCO MERCATTO" ||
+  normalize(emp) === "ALMOCO DELICIA" ||
+  normalize(emp) === "ALMOCO VILLA"
+) {
+  return;
+}
+
+
     const dadosEmpresa = dadosFiltrados.filter(i => i.Empresa === emp);
+
     const agrupado = {};
     dadosEmpresa.forEach(item => {
       let cat = normalize(item.Categoria);
@@ -772,29 +810,66 @@ async function aplicarFiltro() {
     }
     html += `</ul>`;
 
-    // 🔑 Se for o restaurante → soma consolidada
-    if (normalize(emp) === "CARNEIRO MERCATTO RESTAURANTE") {
-      const empresasSomadas = ["CARNEIRO MERCATTO RESTAURANTE", "CARNEIRO MERCATTO EMPORIO", "M.KIDS"];
-      const dadosSomados = dadosFiltrados.filter(i => empresasSomadas.includes(normalize(i.Empresa)));
-      const totalSoma = dadosSomados.reduce((acc, i) => acc + (parseFloat(i.Valor) || 0), 0);
+// 🔑 Se for o restaurante → soma consolidada
+if (normalize(emp) === "CARNEIRO MERCATTO RESTAURANTE") {
+  const empresasSomadas = ["CARNEIRO MERCATTO RESTAURANTE", "CARNEIRO MERCATTO EMPORIO"];
+  const dadosSomados = dadosFiltrados.filter(i => empresasSomadas.includes(normalize(i.Empresa)));
+  const totalSoma = dadosSomados.reduce((acc, i) => acc + (parseFloat(i.Valor) || 0), 0);
 
-      html += `
-        <div style="
-          margin-top:12px;
-          padding:10px;
-          border:2px solid var(--brand);
-          border-radius:10px;
-          background:color-mix(in srgb, var(--surface) 92%, #fff)">
-          <strong style="color:var(--brand)">🔹 Faturamento do Carneiro Mercatto</strong><br>
-          <span style="font-size:1.1rem; font-weight:700">
-            R$ ${BRL(totalSoma)}
-          </span>
-          <small style="display:block; margin-top:4px; color:var(--muted)">
-            (Restaurante + Empório + M.Kids)
-          </small>
-        </div>
-      `;
-    }
+  const totalAlmoco = dadosFiltrados
+    .filter(i => normalize(i.Empresa) === "ALMOCO MERCATTO")
+    .reduce((acc, i) => acc + (parseFloat(i.Valor) || 0), 0);
+
+  html += `
+    <div style="
+      margin-top:12px;
+      padding:10px;
+      border:2px solid var(--brand);
+      border-radius:10px;
+      background:color-mix(in srgb, var(--surface) 92%, #fff)">
+      <strong style="color:var(--brand)">🔹 Faturamento do Carneiro Mercatto</strong><br>
+      <span style="font-size:1.1rem; font-weight:700">
+        R$ ${BRL(totalSoma)}
+      </span>
+      <small style="display:block; margin-top:4px; color:var(--muted)">
+        (Restaurante + Empório)
+      </small>
+      <hr style="margin:8px 0;border:0;border-top:1px dashed var(--line)">
+      <span style="font-size:.95rem; color:var(--muted)">
+        🍽️ Almoço Mercatto: <strong>R$ ${BRL(totalAlmoco)}</strong>
+      </span>
+    </div>
+  `;
+}
+
+// 🔑 Se for o Delícia Gourmet → incluir também "Almoço Delícia"
+if (normalize(emp) === "DELICIA GOURMET") {
+  const totalAlmocoDelicia = dadosFiltrados
+    .filter(i => normalize(i.Empresa) === "ALMOCO DELICIA")
+    .reduce((acc, i) => acc + (parseFloat(i.Valor) || 0), 0);
+
+  html += `
+    <hr style="margin:8px 0;border:0;border-top:1px dashed var(--line)">
+    <span style="font-size:.95rem; color:var(--muted)">
+      🍽️ Almoço Delícia: <strong>R$ ${BRL(totalAlmocoDelicia)}</strong>
+    </span>
+  `;
+}
+
+// 🔑 Se for o Villa Gourmet → incluir também "Almoço Villa"
+if (normalize(emp) === "VILLA GOURMET") {
+  const totalAlmocoVilla = dadosFiltrados
+    .filter(i => normalize(i.Empresa) === "ALMOCO VILLA")
+    .reduce((acc, i) => acc + (parseFloat(i.Valor) || 0), 0);
+
+  html += `
+    <hr style="margin:8px 0;border:0;border-top:1px dashed var(--line)">
+    <span style="font-size:.95rem; color:var(--muted)">
+      🍽️ Almoço Villa: <strong>R$ ${BRL(totalAlmocoVilla)}</strong>
+    </span>
+  `;
+}
+
 
     conteudo.innerHTML = html;
 
@@ -829,6 +904,7 @@ async function aplicarFiltro() {
 
   hideLoading();
 }
+
 
 
   function displayName(catNorm){
@@ -874,55 +950,71 @@ async function aplicarFiltro() {
     });
     return arr;
   }
+function atualizarKPIs(empresa, ano){
+  const mesAtualIdx = new Date().getMonth();
+  const recs = dados.filter(r => r.Empresa === empresa && String(r.Data).startsWith(String(ano)));
 
-  /* ===== Evolução Anual ===== */
-  function abrirEvolucaoAnual(empresa){
-    empresaFoco = empresa;
-    selecionadas = new Set([empresa]);
+  const isBonus = c => normalize(c) === 'BONIFICACAO';
+  const isSocio = c => normalize(c) === 'CONSUMO SOCIO';
+  const isErro  = c => ['ERROS DE GARCONS','PREJUIZO','DESPERDICIO'].includes(normalize(c));
 
-    const ano = new Date().getFullYear();
-    const mesAtualIdx = new Date().getMonth();
+  let bonusAno=0, socioAno=0, erroAno=0;
+  let bonusMes=0, socioMes=0, erroMes=0;
 
-    const recs = dados.filter(r => r.Empresa === empresa && String(r.Data).startsWith(String(ano)));
-    const porMes = Array(12).fill(0);
-    recs.forEach(r=>{
-      const valor = parseFloat(r.Valor) || 0;
-      const m = parseInt(String(r.Data).split('-')[1], 10) - 1;
-      if (m>=0 && m<12) porMes[m] += valor;
-    });
+  recs.forEach(r=>{
+    const v = parseFloat(r.Valor) || 0;
+    const cat = normalize(r.Categoria);
+    const m = parseInt(String(r.Data).split('-')[1], 10) - 1;
 
-    const isBonus = c => normalize(c) === 'BONIFICACAO';
-    const isSocio = c => normalize(c) === 'CONSUMO SOCIO';
-    const isErro  = c => ['ERROS DE GARCONS','PREJUIZO','DESPERDICIO'].includes(normalize(c));
+    if (isBonus(cat)) { bonusAno += v; if (m===mesAtualIdx) bonusMes += v; }
+    if (isSocio(cat)) { socioAno += v; if (m===mesAtualIdx) socioMes += v; }
+    if (isErro(cat))  { erroAno  += v; if (m===mesAtualIdx) erroMes  += v; }
+  });
 
-    let bonusAno=0, socioAno=0, erroAno=0;
-    let bonusMes=0, socioMes=0, erroMes=0;
+  document.getElementById('tituloAnual').textContent = `Evolução Anual — ${empresa} (${ano})`;
+  document.getElementById('kpiBonusAno').textContent = `R$ ${BRL(bonusAno)}`;
+  document.getElementById('kpiBonusMes').textContent = `Mês atual (${MONTHS[mesAtualIdx]}): R$ ${BRL(bonusMes)}`;
+  document.getElementById('kpiSocioAno').textContent = `R$ ${BRL(socioAno)}`;
+  document.getElementById('kpiSocioMes').textContent = `Mês atual (${MONTHS[mesAtualIdx]}): R$ ${BRL(socioMes)}`;
+  document.getElementById('kpiErroAno').textContent  = `R$ ${BRL(erroAno)}`;
+  document.getElementById('kpiErroMes').textContent  = `Mês atual (${MONTHS[mesAtualIdx]}): R$ ${BRL(erroMes)}`;
+}
 
-    recs.forEach(r=>{
-      const v = parseFloat(r.Valor) || 0;
-      const cat = normalize(r.Categoria);
-      const m = parseInt(String(r.Data).split('-')[1], 10) - 1;
+function abrirEvolucaoAnual(empresa){
+  empresaFoco = empresa;
+  selecionadas = new Set([empresa]);
 
-      if (isBonus(cat)) { bonusAno += v; if (m===mesAtualIdx) bonusMes += v; }
-      if (isSocio(cat)) { socioAno += v; if (m===mesAtualIdx)  socioMes += v; }
-      if (isErro(cat))  { erroAno  += v; if (m===mesAtualIdx)  erroMes  += v; }
-    });
+  const anoAtual = new Date().getFullYear();
 
-    document.getElementById('tituloAnual').textContent = `Evolução Anual — ${empresa} (${ano})`;
-    document.getElementById('kpiBonusAno').textContent = `R$ ${BRL(bonusAno)}`;
-    document.getElementById('kpiBonusMes').textContent = `Mês atual (${MONTHS[mesAtualIdx]}): R$ ${BRL(bonusMes)}`;
-    document.getElementById('kpiSocioAno').textContent = `R$ ${BRL(socioAno)}`;
-    document.getElementById('kpiSocioMes').textContent = `Mês atual (${MONTHS[mesAtualIdx]}): R$ ${BRL(socioMes)}`;
-    document.getElementById('kpiErroAno').textContent  = `R$ ${BRL(erroAno)}`;
-    document.getElementById('kpiErroMes').textContent  = `R$ ${BRL(erroMes)}`;
-renderGraficoVilla(porMes, empresa, ano);
+  // Preencher seletor de anos
+  const selectAno = document.getElementById("anoSelect");
+  selectAno.innerHTML = "";
+  anosDisponiveis().forEach(ano=>{
+    const opt = document.createElement("option");
+    opt.value = ano;
+    opt.textContent = ano;
+    if(ano == anoAtual) opt.selected = true;
+    selectAno.appendChild(opt);
+  });
 
+  // Atualiza ao trocar ano
+  selectAno.onchange = ()=>{
+    const anoSel = selectAno.value;
+    atualizarKPIs(empresaFoco, anoSel);
+    renderGraficoComparacao(anoSel);
+  };
 
-    document.getElementById('modalAnual').classList.add('open');
+  // Primeiro carregamento
+  atualizarKPIs(empresa, anoAtual);
+  montarChecklistComparacao(empresa);
+  renderGraficoComparacao(anoAtual);
 
-    document.getElementById('fecharModal').onclick = fecharModal;
-    document.getElementById('modalAnual').addEventListener('click', (e)=>{ if(e.target.id === 'modalAnual') fecharModal(); }, { once:true });
-  }
+  document.getElementById('modalAnual').classList.add('open');
+
+  document.getElementById('fecharModal').onclick = fecharModal;
+  document.getElementById('modalAnual').addEventListener('click', (e)=>{ if(e.target.id === 'modalAnual') fecharModal(); }, { once:true });
+}
+
 
   function montarChecklistComparacao(){
     const list = document.getElementById('compareList');
@@ -939,62 +1031,105 @@ renderGraficoVilla(porMes, empresa, ano);
       `;
       wrap.querySelector('input').addEventListener('change', (e)=>{
         if(e.target.checked) selecionadas.add(emp); else selecionadas.delete(emp);
-        const ano = new Date().getFullYear();
-        renderGraficoComparacao(ano);
+const anoSel = document.getElementById("anoSelect").value || new Date().getFullYear();
+renderGraficoComparacao(anoSel);
+
       });
       list.appendChild(wrap);
     });
 
-    document.getElementById('btnCompareAll').onclick = ()=>{
-      todas.forEach(emp=>selecionadas.add(emp));
-      montarChecklistComparacao();
-      renderGraficoComparacao(new Date().getFullYear());
-    };
-    document.getElementById('btnCompareNone').onclick = ()=>{
-      selecionadas.clear();
-      selecionadas.add(empresaFoco);
-      montarChecklistComparacao();
-      renderGraficoComparacao(new Date().getFullYear());
-    };
+ document.getElementById('btnCompareAll').onclick = ()=>{
+  todas.forEach(emp=>selecionadas.add(emp));
+  montarChecklistComparacao();
+  const anoSel = document.getElementById("anoSelect").value || new Date().getFullYear();
+  renderGraficoComparacao(anoSel);
+};
+document.getElementById('btnCompareNone').onclick = ()=>{
+  selecionadas.clear();
+  selecionadas.add(empresaFoco);
+  montarChecklistComparacao();
+  const anoSel = document.getElementById("anoSelect").value || new Date().getFullYear();
+  renderGraficoComparacao(anoSel);
+};
+
   }
 
-function renderGraficoVilla(porMes, empresa, ano){
-  const ctx = document.getElementById('graficoAnual').getContext('2d');
-  if (graficoAnualRef) { graficoAnualRef.destroy(); graficoAnualRef = null; }
+  function renderGraficoComparacao(ano){
+    const ctx = document.getElementById('graficoAnual').getContext('2d');
+    const marcas = [...selecionadas];
+    if (graficoAnualRef) { graficoAnualRef.destroy(); graficoAnualRef = null; }
 
-  graficoAnualRef = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: MONTHS,
-      datasets: [{
-        label: 'Total vendido por mês',
-        data: porMes,
-        backgroundColor: MONTHS.map((_,i)=>
-          i===new Date().getMonth()
-            ? 'rgba(37,99,235,.55)'
-            : 'rgba(37,99,235,.22)'
-        ),
-        borderColor: '#2563eb',
-        borderWidth: 1
-      }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: {
-        legend: { display:false },
-        title: { display:true, text:`Total vendido por mês — ${empresa}` }
-      },
-      scales: { y: { beginAtZero:true } }
+    if (marcas.length <= 1){
+      const emp = marcas[0] || empresaFoco;
+      const porMes = totaisMensaisPorEmpresa(emp, ano);
+      graficoAnualRef = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: MONTHS,
+          datasets: [{
+            label: 'Total vendido por mês',
+            data: porMes,
+            backgroundColor: MONTHS.map((_,i)=> i===new Date().getMonth() ? 'rgba(37,99,235,.55)' : 'rgba(37,99,235,.22)'),
+            borderColor: '#2563eb',
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          interaction: { mode: 'nearest', axis: 'x', intersect: false },
+          events: ['mousemove','mouseout','click','touchstart','touchmove','touchend'],
+          plugins: {
+            legend: { display:false },
+            title: { display:true, text:`Total vendido por mês — ${emp}` },
+            tooltip: {
+              position: 'nearest',
+              callbacks:{ label: c => 'R$ ' + (Number(c.parsed.y)||0).toLocaleString('pt-BR',{minimumFractionDigits:2}) }
+            }
+          },
+          scales: { y: { beginAtZero:true } }
+        }
+      });
+    } else {
+      const datasets = marcas.map((emp, i)=>({
+        label: emp,
+        data: totaisMensaisPorEmpresa(emp, ano),
+        borderColor: colorFor(i),
+        backgroundColor: colorFor(i),
+        fill: false,
+        tension: .25,
+        pointRadius: POINT_RADIUS,
+        pointHoverRadius: HOVER_RADIUS,
+        pointHitRadius: HIT_RADIUS
+      }));
+      graficoAnualRef = new Chart(ctx, {
+        type: 'line',
+        data: { labels: MONTHS, datasets },
+        options: {
+          responsive:true, maintainAspectRatio:false,
+          interaction: { mode: 'nearest', axis: 'x', intersect: false },
+          elements: { point: { radius: POINT_RADIUS, hoverRadius: HOVER_RADIUS, hitRadius: HIT_RADIUS } },
+          events: ['mousemove','mouseout','click','touchstart','touchmove','touchend'],
+          plugins:{
+            legend:{ display:true },
+            title:{ display:true, text:`Evolução comparada por mês — ${ano}` },
+            tooltip:{
+              position: 'nearest',
+              callbacks:{ label: c => `${c.dataset.label}: R$ ${(Number(c.parsed.y)||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}` }
+            }
+          },
+          scales:{ y:{ beginAtZero:true } }
+        }
+      });
     }
-  });
-}
-
   }
 
-function fecharModal(){
-  document.getElementById('modalAnual').classList.remove('open');
-  if (graficoAnualRef){ graficoAnualRef.destroy(); graficoAnualRef = null; }
-}
+  function fecharModal(){
+    document.getElementById('modalAnual').classList.remove('open');
+    if (graficoAnualRef){ graficoAnualRef.destroy(); graficoAnualRef = null; }
+    selecionadas.clear();
+    document.getElementById('compareList').innerHTML = '';
+    empresaFoco = null;
+  }
 
   /* ===== Exportar PDF ===== */
   function exportarPDF() {
