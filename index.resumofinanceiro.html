@@ -1036,8 +1036,10 @@ function montarChecklistComparacao(){
   const list = document.getElementById('compareList');
   list.innerHTML = '';
 
-  // 🔒 remove empresas que começam com "ALMOCO"
-  const todas = empresasUnicas().filter(emp => !/^ALMOCO/i.test(normalize(emp)));
+// 🔒 fixa apenas em VILLA GOURMET
+const todas = ["VILLA GOURMET"];
+selecionadas = new Set(todas); // garante que só ela esteja marcada
+
 
   todas.forEach((emp, idx)=>{
     const id = `cmp_${idx}`;
