@@ -603,6 +603,7 @@ function toggleSel(chk){
   if(chk.checked) SELEC.push({id,emp,linha,valor});
   else SELEC=SELEC.filter(x=>x.id!==id);
   $("btnMassa").style.display = SELEC.length ? "block" : "none";
+  if (SELEC.length) $("btnMassa").scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
 
