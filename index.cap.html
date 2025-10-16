@@ -460,7 +460,7 @@ textarea{width:100%;min-height:90px;border-radius:8px;border:1px solid #22314b;b
 </div>
 
 <script>
-const endpointTitulos="https://script.google.com/macros/s/AKfycbwCvi3HSdq_6hokbOxM4cbcuu6PI8g-my0fywUuIuTxRJzfd_4h0-uAsRMwPRUiT47m/exec";
+const endpointTitulos="https://script.google.com/macros/s/AKfycbzgFq7Yo-Et0BAsz8qOjjgVKJ8nmP0_-glgHkUlRKkI9BPBtzay9q8W-QuUzO9YFmHT/exec";
 const EMP_DEFAULT=["CAP VILLA"];
 let TITULOS={},SELEC=[],obsContext={};
 
@@ -674,14 +674,17 @@ async function atualizarStatusMassa(novo = "Aprovado") {
 
   // 🔹 Envia tudo ao GAS (modo background, mesmo se fechar navegador)
   try {
-    await fetch(endpointTitulos, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action: "aprovarMassa",
-        itens: itens
-      })
-    });
+await fetch(endpointTitulos, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  mode: "no-cors", // ✅ evita bloqueio de CORS no Vercel
+  body: JSON.stringify({
+    action: "aprovarMassa",
+    itens: itens
+  })
+});
+
+
 
     // 🔹 Mensagem visual de sucesso (pode fechar o navegador)
     const aviso = document.createElement("div");
