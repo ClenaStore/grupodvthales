@@ -645,12 +645,14 @@ async function acaoStatus(btn, novo) {
   atualizarBubble();
 }
 
-// ✅ atualização em massa em segundo plano
+// ✅ atualização em massa com execução garantida
 async function atualizarStatusMassa(novo = "Aprovado") {
+  if (SELEC.length === 0) return;
   const btn = $("btnMassa");
   setLoading(btn, true);
 
-  SELEC.forEach(s => {
+  // Executa todas as atualizações em paralelo
+  await Promise.all(SELEC.map(async (s) => {
     const card = document.querySelector(`.titulo[data-id="${s.id}"]`);
     if (!card) return;
     setPill(card.querySelector("[data-status]"), novo);
@@ -659,11 +661,14 @@ async function atualizarStatusMassa(novo = "Aprovado") {
     card.style.transition = "opacity 0.3s ease";
     setTimeout(() => card.remove(), 300);
 
-    // atualização em background
-    fetch(`${endpointTitulos}?action=atualizar&empresa=${encodeURIComponent(s.emp)}&linha=${s.linha}&status=${encodeURIComponent(novo)}`)
-      .catch(e => console.error("Erro ao aprovar massa:", e));
-  });
+    try {
+      await fetch(`${endpointTitulos}?action=atualizar&empresa=${encodeURIComponent(s.emp)}&linha=${s.linha}&status=${encodeURIComponent(novo)}`);
+    } catch (e) {
+      console.error("Erro ao aprovar massa:", e);
+    }
+  }));
 
+  // Limpa seleção e atualiza interface
   SELEC = [];
   $("master").checked = false;
   $("bubble").style.display = "none";
@@ -671,6 +676,12 @@ async function atualizarStatusMassa(novo = "Aprovado") {
   setLoading(btn, false);
   atualizarBubble();
 }
+
+// ✅ Garante que o botão funciona mesmo após renderizações
+document.addEventListener("DOMContentLoaded", () => {
+  $("btnMassa").addEventListener("click", () => atualizarStatusMassa("Aprovado"));
+});
+
 
 
 
