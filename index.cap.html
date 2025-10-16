@@ -644,48 +644,66 @@ async function acaoStatus(btn, novo) {
   atualizarBubble();
 }
 
-// ✅ Atualização em massa (garante envio ao GAS)
+// ✅ Atualização em massa assíncrona (continua mesmo com navegador fechado)
 async function atualizarStatusMassa(novo = "Aprovado") {
   const btn = $("btnMassa");
   setLoading(btn, true);
 
-  // Cria uma cópia da lista selecionada
-  const selecionados = [...SELEC];
-  SELEC = []; // limpa a seleção global
+  try {
+    // Monta o corpo da requisição com todos os itens selecionados
+    const payload = {
+      action: "aprovarMassa",
+      itens: SELEC
+    };
 
-  for (const s of selecionados) {
-    const card = document.querySelector(`.titulo[data-id="${s.id}"]`);
-    if (!card) continue;
+    // Envia todos os dados para o GAS de uma vez (POST JSON)
+    const resp = await fetch(endpointTitulos, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
 
-    // Atualiza visual imediatamente
-    setPill(card.querySelector("[data-status]"), novo);
-    addHistLocal(s.id, "Status alterado para " + novo);
-    card.style.opacity = "0.6";
-    card.style.transition = "opacity 0.3s ease";
-    setTimeout(() => card.remove(), 300);
+    const data = await resp.json();
+    console.log("📤 Enviado ao GAS:", data);
 
-    // Aguarda envio real ao GAS (POST)
-    try {
-      await fetch(endpointTitulos, {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({
-          action: "atualizar",
-          empresa: s.emp,
-          linha: s.linha,
-          status: novo
-        })
-      });
-    } catch (e) {
-      console.error("Erro ao aprovar massa:", e);
-    }
+    // Atualiza a tela imediatamente (sem esperar o processamento real)
+    SELEC.forEach(s => {
+      const card = document.querySelector(`.titulo[data-id="${s.id}"]`);
+      if (card) {
+        setPill(card.querySelector("[data-status]"), novo);
+        card.style.opacity = "0.6";
+        setTimeout(() => card.remove(), 300);
+      }
+    });
+
+    // Feedback rápido ao usuário
+    const aviso = document.createElement("div");
+    aviso.textContent = "✅ Aprovados enviados para processamento. Pode fechar a página.";
+    aviso.style.position = "fixed";
+    aviso.style.bottom = "20px";
+    aviso.style.right = "20px";
+    aviso.style.background = "#16a34a";
+    aviso.style.color = "#fff";
+    aviso.style.padding = "10px 16px";
+    aviso.style.borderRadius = "8px";
+    aviso.style.fontWeight = "700";
+    aviso.style.boxShadow = "0 2px 10px rgba(0,0,0,.3)";
+    aviso.style.zIndex = "9999";
+    document.body.appendChild(aviso);
+    setTimeout(() => aviso.remove(), 4000);
+
+    // Limpa seleção e botões
+    SELEC = [];
+    $("master").checked = false;
+    $("bubble").style.display = "none";
+    $("btnMassa").style.display = "none";
+
+  } catch (err) {
+    console.error("❌ Erro ao enviar aprovação em massa:", err);
+    alert("Erro ao enviar para o servidor. Verifique a conexão.");
   }
 
-  $("master").checked = false;
-  $("bubble").style.display = "none";
-  $("btnMassa").style.display = "none";
   setLoading(btn, false);
-  atualizarBubble();
 }
 
 
