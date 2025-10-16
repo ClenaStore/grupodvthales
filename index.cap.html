@@ -460,7 +460,7 @@ textarea{width:100%;min-height:90px;border-radius:8px;border:1px solid #22314b;b
 </div>
 
 <script>
-const endpointTitulos="https://script.google.com/macros/s/AKfycbwI8OAcfLsPhpTDSuz962Xlf9kgnHRGyQmZY2N4oSEza-r3wjfzdUi9qimJDu5xJChe/exec";
+const endpointTitulos="https://script.google.com/macros/s/AKfycbzUfUXj5b9QB6v02RhshJCFeIzDT_DwihSYDdtgctANVpqFZol6dDe4WXfuYu7b9CKB/exec";
 const EMP_DEFAULT=["CAP VILLA"];
 let TITULOS={},SELEC=[],obsContext={};
 
@@ -644,76 +644,50 @@ async function acaoStatus(btn, novo) {
   atualizarBubble();
 }
 
-// ✅ Aprova todos os títulos visíveis e dispara processo assíncrono no GAS
+// ✅ Atualização em massa (garante envio ao GAS)
 async function atualizarStatusMassa(novo = "Aprovado") {
   const btn = $("btnMassa");
   setLoading(btn, true);
 
-  // 🔹 Coleta todos os cards atualmente visíveis na tela
-  const cards = Array.from(document.querySelectorAll(".titulo"));
-  if (!cards.length) {
-    alert("Nenhum título disponível para aprovar.");
-    setLoading(btn, false);
-    return;
-  }
+  // Cria uma cópia da lista selecionada
+  const selecionados = [...SELEC];
+  SELEC = []; // limpa a seleção global
 
-  // 🔹 Monta o payload para enviar ao GAS
-  const itens = cards.map(card => ({
-    id: card.dataset.id,
-    emp: card.dataset.emp,
-    linha: parseInt(card.dataset.linha, 10),
-    valor: parseFloat(card.dataset.valor) || 0
-  }));
+  for (const s of selecionados) {
+    const card = document.querySelector(`.titulo[data-id="${s.id}"]`);
+    if (!card) continue;
 
-  // 🔹 Atualiza visualmente todos na tela como aprovados (instantâneo)
-  cards.forEach(card => {
+    // Atualiza visual imediatamente
     setPill(card.querySelector("[data-status]"), novo);
+    addHistLocal(s.id, "Status alterado para " + novo);
     card.style.opacity = "0.6";
+    card.style.transition = "opacity 0.3s ease";
     setTimeout(() => card.remove(), 300);
-  });
 
-  // 🔹 Envia tudo ao GAS (modo background, mesmo se fechar navegador)
-  try {
-await fetch(endpointTitulos, {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  mode: "no-cors", // ✅ evita bloqueio de CORS no Vercel
-  body: JSON.stringify({
-    action: "aprovarMassa",
-    itens: itens
-  })
-});
-
-
-
-    // 🔹 Mensagem visual de sucesso (pode fechar o navegador)
-    const aviso = document.createElement("div");
-    aviso.textContent = "✅ Aprovação enviada! Pode fechar o navegador, o servidor continuará o processo.";
-    aviso.style.position = "fixed";
-    aviso.style.bottom = "20px";
-    aviso.style.right = "20px";
-    aviso.style.background = "#16a34a";
-    aviso.style.color = "#fff";
-    aviso.style.padding = "10px 16px";
-    aviso.style.borderRadius = "8px";
-    aviso.style.fontWeight = "700";
-    aviso.style.boxShadow = "0 2px 10px rgba(0,0,0,.3)";
-    aviso.style.zIndex = "9999";
-    document.body.appendChild(aviso);
-    setTimeout(() => aviso.remove(), 6000);
-
-  } catch (err) {
-    console.error("❌ Erro ao enviar para o servidor:", err);
-    alert("Erro ao enviar aprovação para o servidor. Tente novamente.");
+    // Aguarda envio real ao GAS (POST)
+    try {
+      await fetch(endpointTitulos, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          action: "atualizar",
+          empresa: s.emp,
+          linha: s.linha,
+          status: novo
+        })
+      });
+    } catch (e) {
+      console.error("Erro ao aprovar massa:", e);
+    }
   }
 
-  // 🔹 Limpa seleção e estado da UI
-  SELEC = [];
   $("master").checked = false;
-  $("btnMassa").style.display = "none";
   $("bubble").style.display = "none";
+  $("btnMassa").style.display = "none";
   setLoading(btn, false);
+  atualizarBubble();
 }
+
 
 
 
