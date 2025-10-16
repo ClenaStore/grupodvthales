@@ -644,41 +644,48 @@ async function acaoStatus(btn, novo) {
   atualizarBubble();
 }
 
-// ✅ Atualização em massa assíncrona (continua mesmo com navegador fechado)
+// ✅ Aprova todos os títulos visíveis e dispara processo assíncrono no GAS
 async function atualizarStatusMassa(novo = "Aprovado") {
   const btn = $("btnMassa");
   setLoading(btn, true);
 
-  try {
-    // Monta o corpo da requisição com todos os itens selecionados
-    const payload = {
-      action: "aprovarMassa",
-      itens: SELEC
-    };
+  // 🔹 Coleta todos os cards atualmente visíveis na tela
+  const cards = Array.from(document.querySelectorAll(".titulo"));
+  if (!cards.length) {
+    alert("Nenhum título disponível para aprovar.");
+    setLoading(btn, false);
+    return;
+  }
 
-    // Envia todos os dados para o GAS de uma vez (POST JSON)
-    const resp = await fetch(endpointTitulos, {
+  // 🔹 Monta o payload para enviar ao GAS
+  const itens = cards.map(card => ({
+    id: card.dataset.id,
+    emp: card.dataset.emp,
+    linha: parseInt(card.dataset.linha, 10),
+    valor: parseFloat(card.dataset.valor) || 0
+  }));
+
+  // 🔹 Atualiza visualmente todos na tela como aprovados (instantâneo)
+  cards.forEach(card => {
+    setPill(card.querySelector("[data-status]"), novo);
+    card.style.opacity = "0.6";
+    setTimeout(() => card.remove(), 300);
+  });
+
+  // 🔹 Envia tudo ao GAS (modo background, mesmo se fechar navegador)
+  try {
+    await fetch(endpointTitulos, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
+      body: JSON.stringify({
+        action: "aprovarMassa",
+        itens: itens
+      })
     });
 
-    const data = await resp.json();
-    console.log("📤 Enviado ao GAS:", data);
-
-    // Atualiza a tela imediatamente (sem esperar o processamento real)
-    SELEC.forEach(s => {
-      const card = document.querySelector(`.titulo[data-id="${s.id}"]`);
-      if (card) {
-        setPill(card.querySelector("[data-status]"), novo);
-        card.style.opacity = "0.6";
-        setTimeout(() => card.remove(), 300);
-      }
-    });
-
-    // Feedback rápido ao usuário
+    // 🔹 Mensagem visual de sucesso (pode fechar o navegador)
     const aviso = document.createElement("div");
-    aviso.textContent = "✅ Aprovados enviados para processamento. Pode fechar a página.";
+    aviso.textContent = "✅ Aprovação enviada! Pode fechar o navegador, o servidor continuará o processo.";
     aviso.style.position = "fixed";
     aviso.style.bottom = "20px";
     aviso.style.right = "20px";
@@ -690,22 +697,20 @@ async function atualizarStatusMassa(novo = "Aprovado") {
     aviso.style.boxShadow = "0 2px 10px rgba(0,0,0,.3)";
     aviso.style.zIndex = "9999";
     document.body.appendChild(aviso);
-    setTimeout(() => aviso.remove(), 4000);
-
-    // Limpa seleção e botões
-    SELEC = [];
-    $("master").checked = false;
-    $("bubble").style.display = "none";
-    $("btnMassa").style.display = "none";
+    setTimeout(() => aviso.remove(), 6000);
 
   } catch (err) {
-    console.error("❌ Erro ao enviar aprovação em massa:", err);
-    alert("Erro ao enviar para o servidor. Verifique a conexão.");
+    console.error("❌ Erro ao enviar para o servidor:", err);
+    alert("Erro ao enviar aprovação para o servidor. Tente novamente.");
   }
 
+  // 🔹 Limpa seleção e estado da UI
+  SELEC = [];
+  $("master").checked = false;
+  $("btnMassa").style.display = "none";
+  $("bubble").style.display = "none";
   setLoading(btn, false);
 }
-
 
 
 
