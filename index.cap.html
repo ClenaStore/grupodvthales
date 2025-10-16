@@ -461,7 +461,7 @@ textarea{width:100%;min-height:90px;border-radius:8px;border:1px solid #22314b;b
 </div>
 
 <script>
-const endpointTitulos="https://script.google.com/macros/s/AKfycbz2X4ooN71lr1WFbDMfFtfELVArvJ72VxwUPvAclER84O0faEx1Xcs2-XvIGNejVRca/exec";
+const endpointTitulos="https://script.google.com/macros/s/AKfycbzUfUXj5b9QB6v02RhshJCFeIzDT_DwihSYDdtgctANVpqFZol6dDe4WXfuYu7b9CKB/exec";
 const EMP_DEFAULT=["CAP VILLA"];
 let TITULOS={},SELEC=[],obsContext={};
 
@@ -603,7 +603,6 @@ function toggleSel(chk){
   if(chk.checked) SELEC.push({id,emp,linha,valor});
   else SELEC=SELEC.filter(x=>x.id!==id);
   $("btnMassa").style.display = SELEC.length ? "block" : "none";
-  if (SELEC.length) $("btnMassa").scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
 
@@ -665,15 +664,13 @@ async function atualizarStatusMassa(novo = "Aprovado") {
       .catch(e => console.error("Erro ao aprovar massa:", e));
   });
 
-// ✅ Aguarda um pouco antes de limpar para não sumir instantaneamente
-setTimeout(() => {
   SELEC = [];
   $("master").checked = false;
   $("bubble").style.display = "none";
   $("btnMassa").style.display = "none";
   setLoading(btn, false);
   atualizarBubble();
-}, 400);
+}
 
 
 
@@ -863,8 +860,6 @@ refresh();
 setInterval(() => {
   refresh();
 }, 15000);
-// 🔹 Liga o botão "Aprovar selecionados"
-$("btnMassa").onclick = () => atualizarStatusMassa("Aprovado");
 
 </script>
 </body>
