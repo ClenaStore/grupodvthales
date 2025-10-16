@@ -644,50 +644,32 @@ async function acaoStatus(btn, novo) {
   atualizarBubble();
 }
 
-// ✅ Atualização em massa (garante envio ao GAS)
+// ✅ atualização em massa em segundo plano
 async function atualizarStatusMassa(novo = "Aprovado") {
   const btn = $("btnMassa");
   setLoading(btn, true);
 
-  // Cria uma cópia da lista selecionada
-  const selecionados = [...SELEC];
-  SELEC = []; // limpa a seleção global
-
-  for (const s of selecionados) {
+  SELEC.forEach(s => {
     const card = document.querySelector(`.titulo[data-id="${s.id}"]`);
-    if (!card) continue;
-
-    // Atualiza visual imediatamente
+    if (!card) return;
     setPill(card.querySelector("[data-status]"), novo);
     addHistLocal(s.id, "Status alterado para " + novo);
     card.style.opacity = "0.6";
     card.style.transition = "opacity 0.3s ease";
     setTimeout(() => card.remove(), 300);
 
-    // Aguarda envio real ao GAS (POST)
-    try {
-      await fetch(endpointTitulos, {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({
-          action: "atualizar",
-          empresa: s.emp,
-          linha: s.linha,
-          status: novo
-        })
-      });
-    } catch (e) {
-      console.error("Erro ao aprovar massa:", e);
-    }
-  }
+    // atualização em background
+    fetch(`${endpointTitulos}?action=atualizar&empresa=${encodeURIComponent(s.emp)}&linha=${s.linha}&status=${encodeURIComponent(novo)}`)
+      .catch(e => console.error("Erro ao aprovar massa:", e));
+  });
 
+  SELEC = [];
   $("master").checked = false;
   $("bubble").style.display = "none";
   $("btnMassa").style.display = "none";
   setLoading(btn, false);
   atualizarBubble();
 }
-
 
 
 
@@ -877,8 +859,6 @@ refresh();
 setInterval(() => {
   refresh();
 }, 15000);
-// 🔹 Evento do botão "Aprovar selecionados"
-$("btnMassa").addEventListener("click", () => atualizarStatusMassa("Aprovado"));
 
 </script>
 </body>
