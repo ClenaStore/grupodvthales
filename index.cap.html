@@ -676,11 +676,10 @@ async function atualizarStatusMassa(novo = "Aprovado") {
   setLoading(btn, false);
   atualizarBubble();
 }
+  
+// ✅ Garante que o botão "Aprovar selecionados" funcione sempre
+$("btnMassa").onclick = () => atualizarStatusMassa("Aprovado");
 
-// ✅ Garante que o botão funciona mesmo após renderizações
-document.addEventListener("DOMContentLoaded", () => {
-  $("btnMassa").addEventListener("click", () => atualizarStatusMassa("Aprovado"));
-});
 
 
 
