@@ -664,13 +664,15 @@ async function atualizarStatusMassa(novo = "Aprovado") {
       .catch(e => console.error("Erro ao aprovar massa:", e));
   });
 
+// ✅ Aguarda um pouco antes de limpar para não sumir instantaneamente
+setTimeout(() => {
   SELEC = [];
   $("master").checked = false;
   $("bubble").style.display = "none";
   $("btnMassa").style.display = "none";
   setLoading(btn, false);
   atualizarBubble();
-}
+}, 400);
 
 
 
