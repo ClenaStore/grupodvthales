@@ -460,7 +460,7 @@ textarea{width:100%;min-height:90px;border-radius:8px;border:1px solid #22314b;b
 </div>
 
 <script>
-const endpointTitulos="https://script.google.com/macros/s/AKfycbzUfUXj5b9QB6v02RhshJCFeIzDT_DwihSYDdtgctANVpqFZol6dDe4WXfuYu7b9CKB/exec";
+const endpointTitulos="https://script.google.com/macros/s/AKfycbyjZ5UzhVt32t6qfccD2c1novETnkvzXWEk_NCjNcezDVtt9fttlBarbAjBvWzLsD00/exec";
 const EMP_DEFAULT=["CAP VILLA"];
 let TITULOS={},SELEC=[],obsContext={};
 
@@ -487,6 +487,77 @@ function parseValor(v){
 
 const iso = d => { const dt=new Date(d); dt.setMinutes(dt.getMinutes()-dt.getTimezoneOffset()); return dt.toISOString().slice(0,10); };
 const ID=(emp,linha)=>`${emp.replace(/\s+/g,'_')}__${linha}`;
+
+
+  // ============================================================
+// 🔸 Fila persistente e envio garantido (mesmo ao fechar a aba)
+// ============================================================
+const QUEUE_KEY = "CAP_APROVACAO_FILA";
+const makeOpId = (emp, linha, status) => `${emp}#${linha}#${status}#${Date.now()}`;
+
+function readQueue() {
+  try { return JSON.parse(localStorage.getItem(QUEUE_KEY) || "[]"); } catch { return []; }
+}
+function writeQueue(arr) {
+  localStorage.setItem(QUEUE_KEY, JSON.stringify(arr));
+}
+function enqueueOps(ops) {
+  const q = readQueue();
+  const seen = new Set(q.map(o => o.opId));
+  const toAdd = ops.filter(o => !seen.has(o.opId));
+  if (toAdd.length) writeQueue(q.concat(toAdd));
+}
+function removeFromQueue(opIds) {
+  const set = new Set(opIds);
+  const q = readQueue().filter(o => !set.has(o.opId));
+  writeQueue(q);
+}
+
+// 🔹 Envio garantido (sendBeacon ou fetch keepalive)
+async function flushQueue({ immediate = false } = {}) {
+  const q = readQueue();
+  if (!q.length) return true;
+
+  const payload = { ops: q };
+  const url = `${endpointTitulos}`;
+  const fd = new FormData();
+  fd.append("payload", JSON.stringify(payload));
+
+  try {
+    const sent = navigator.sendBeacon && navigator.sendBeacon(url, fd);
+    if (sent && !immediate) {
+      removeFromQueue(q.map(o => o.opId));
+      return true;
+    }
+  } catch (e) {
+    console.warn("sendBeacon falhou, tentando fetch keepalive…", e);
+  }
+
+  try {
+    const r = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      keepalive: true
+    });
+    if (r.ok) removeFromQueue(q.map(o => o.opId));
+  } catch (e) {
+    console.error("Falha no envio keepalive:", e);
+  }
+}
+
+// 🔹 Reenvia quando aba é fechada ou escondida
+window.addEventListener("pagehide", () => flushQueue({ immediate: true }));
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden") flushQueue({ immediate: true });
+});
+
+// 🔹 Reenvia periodicamente e ao abrir o painel
+(async function initQueue() {
+  await flushQueue();
+  setInterval(() => flushQueue(), 30000);
+})();
+
 
 function setLoading(btn,on=true){if(on)btn.classList.add("loading");else btn.classList.remove("loading");}
 
@@ -614,35 +685,29 @@ $("master").addEventListener("change",function(){
   });
 });
 
-// ✅ ação individual (não bloqueia nem trava)
+// ✅ Ação individual segura (usa fila persistente)
 async function acaoStatus(btn, novo) {
   const card = btn.closest(".titulo");
-  const emp = card.dataset.emp,
-        linha = card.dataset.linha,
-        id = card.dataset.id;
+  const emp  = card.dataset.emp;
+  const linha= Number(card.dataset.linha);
+  const id   = card.dataset.id;
 
-  // muda status visual e remove da tela antes da chamada
+  // Atualiza visualmente
   setPill(card.querySelector("[data-status]"), novo);
   addHistLocal(id, "Status alterado para " + novo);
   card.style.opacity = "0.6";
   card.style.transition = "opacity 0.3s ease";
-
-  // remove da tela logo após clique
   setTimeout(() => card.remove(), 300);
 
-  // faz atualização em segundo plano
-  (async () => {
-    try {
-      await fetch(
-        `${endpointTitulos}?action=atualizar&empresa=${encodeURIComponent(emp)}&linha=${linha}&status=${encodeURIComponent(novo)}`
-      );
-    } catch (e) {
-      console.error("Erro ao atualizar status:", e);
-    }
-  })();
+  // Enfileira operação
+  const op = { empresa: emp, linha, status: novo, opId: makeOpId(emp, linha, novo), ts: Date.now() };
+  enqueueOps([op]);
 
+  // Envia em segundo plano (resiste se a aba fechar)
+  flushQueue();
   atualizarBubble();
 }
+
 
 // ✅ atualização em massa em segundo plano
 async function atualizarStatusMassa(novo = "Aprovado") {
